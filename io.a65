@@ -1,0 +1,288 @@
+;-----------------------------------------------------------------
+; FUNCTION:	Set cursor position to next tab, every 8 spaces
+;	        INTEGER BASIC HAS TABS AT EVERY 8 POSITIONS
+;	        C64/X16 BASIC HAS TABS AT EVERY 10 POSITIONS
+;-----------------------------------------------------------------
+Tab:
+		pha
+		phx
+		phy
+		sec		; GET cursor position; X=ROW, Y=COL
+		jsr PLOT
+		cpy #72		; last tab position, move to next line
+		bcs TabNewLine	; greater than or equal
+		tya
+		ora #$07	; set tab every 8th position
+		tay
+		iny
+		jmp TabEnd
+TabNewLine:
+		inx
+		ldy #0
+TabEnd:
+		clc		; SET cursor position with new COL
+		jsr PLOT
+		ply
+		plx
+		pla
+		rts
+
+;-----------------------------------------------------------------
+; FUNCTION:	Print String without NEWLINE
+; INPUT:	r0 = string pointer
+; OUTPUT:
+;-----------------------------------------------------------------
+PrString:
+		pha
+		phy
+            	ldy #0
+PrString0:
+            	lda (r0), y
+            	beq PrString1
+            	phy
+            	jsr CHROUT
+            	ply
+            	iny
+            	jmp PrString0
+PrString1:
+		ply
+		pla
+            	rts
+
+;-----------------------------------------------------------------
+; FUNCTION:	Print 8-bit hexadecimal number padded with zeros
+; INPUT:	.A = value to print
+; OUTPUT:
+;-----------------------------------------------------------------
+PrHex8:
+            PHA      ; Save A
+            LSR A    ; Move top nybble to bottom nybble
+            LSR A
+            LSR A
+            LSR A
+            JSR PrNybble               ; Print this nybble
+            PLA                        ; Get A back and print bottom nybble
+PrNybble:
+            AND #15                    ; Keep bottom four bits
+            CMP #10                    ; If 0-9, jump to print
+            BCC PrDigit
+            ADC #6                     ; Convert ':' to 'A'
+PrDigit:
+            ADC #48        ; ASC"0"
+            JSR CHROUT     ; Convert to character and print
+            RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit hexadecimal number
+; INPUT:    r0 = Word to print
+;           
+; OUTPUT:   
+;-----------------------------------------------------------------
+PrHex16:
+            lda r0H
+            jsr PrHex8
+            lda r0L
+            jsr PrHex8
+            rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 8-bit decimal number padded with zeros
+; INPUT:    .A = value to print
+;           
+; OUTPUT:   
+;-----------------------------------------------------------------
+PrDec8:
+            LDX #$FF                   ; Prepare for subtraction
+            SEC
+PrDec100:
+            INX                        ; Count how many 100s
+            SBC #100
+            BCS PrDec100
+            ADC #100                   ; Print the 100s
+            JSR PrDecDigit
+            LDX #$FF                   ; Prepare for subtraction
+            SEC
+PrDec10:
+            INX                        ; Count how many 10s
+            SBC #10
+            BCS PrDec10
+            ADC #10                    ; Print the 10s
+            JSR PrDecDigit
+            TAX                        ; Pass 1s into X
+PrDecDigit:
+            PHA                        ; Save A, pass digit to A
+            TXA
+            ORA #48                    ; Convert to character (ASC"0") and print it
+            JSR CHROUT
+            PLA                        ; Restore A and return
+            RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print BYTE (decimal) without '0' padding
+; INPUT:    .A = byte
+;
+; OUTPUT:   .A, .X, .Y corrupted
+;-----------------------------------------------------------------
+PrByte:
+	ldy #$2f
+	ldx #$3a
+	sec
+PrByteL1:
+	iny
+	sbc #100
+	bcs PrByteL1
+PrByteL2:
+	dex
+	adc #10
+	bmi PrByteL2
+	adc #$2f
+	pha		; Save .A to print last
+	cpy #$30	; ASC"0"
+	beq PrByteL3	; 100s is ZERO, check 10s
+	tya		; Not ZERO, print .Y = hundred's
+	jsr CHROUT
+	jmp PrByteL4	; Print 10s even if ZERO
+PrByteL3:
+	cpx #$30	; ASC"0"
+	beq PrByteL5	; 10s also ZERO, print 1s
+PrByteL4:
+	txa		; Print .X = ten's
+	jsr CHROUT
+PrByteL5:
+	pla		; Print .A = one's
+	jsr CHROUT
+	rts
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-bit Binary Negation (two's complement)
+; INPUT:    r0
+;
+; OUTPUT:   r2 = 0 - r0 = ~r0 + 1 
+;-----------------------------------------------------------------
+NEG16:
+	    SEC           ;Ensure carry is set
+	    LDA #0        ;Load constant zero
+	    SBC r0L       ;... subtract the least significant byte
+	    STA r2L       ;... and store the result
+	    LDA #0        ;Load constant zero again
+	    SBC r0H       ;... subtract the most significant byte
+	    STA r2H       ;... and store the result
+	    RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit decimal number SIGNED
+; INPUT:    r0 = value to print
+;           .Y  = pad character
+;           (e.g. '0' #48 or ' ' #32 or #0 for none)
+;
+; OUTPUT:   r0 corrupted with NEG16 value
+;-----------------------------------------------------------------
+PrSgnDec16:
+		phy			; save .Y = padding char
+		lda r0H			; load MSB
+	    	and #$80		; check for sign bit of MSB
+	    	beq PrSgnDec16L1	; positive, print normally
+	    	jsr NEG16		; negative, NEG16 result at r2
+	    	lda #'-'		; print '-' sign
+	    	jsr CHROUT
+		MoveW r2, r0		; load new positive value
+PrSgnDec16L1:
+		ply			; restore .Y
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit decimal number UNSIGNED
+; INPUT:    r0 = value to print, copied to scratch r11
+;           .Y = pad character
+;           (e.g. '0' #48 or ' ' #32 or #0 for none)
+;
+; INPUT:    at PrDec16Lp1
+;           Y=(number of digits)*2-2, e.g. 8 for 5 digits
+;
+; OUTPUT:   A,X,Y corrupted
+;-----------------------------------------------------------------
+PrDec16:
+	    STY pad			; Save new padding character
+	    MoveW r0, r11
+            LDY #8			; Offset to powers of ten
+PrDec16Lp1:
+            LDX #$FF			; Start with digit=-1
+            SEC
+PrDec16Lp2:
+            LDA r11L			; Subtract current tens
+            SBC PrDec16Tens+0,Y
+            STA r11L
+            LDA r11H
+            SBC PrDec16Tens+1,Y
+            STA r11H
+            INX				; Loop until <0
+            BCS PrDec16Lp2
+            LDA r11L  ; Add current tens back in
+            ADC PrDec16Tens+0,Y
+            STA r11L
+            LDA r11H
+            ADC PrDec16Tens+1,Y
+            STA r11H
+            TXA				; Not zero, print it
+            BNE PrDec16Digit
+            LDA pad			; pad<>0, use it
+            BNE PrDec16Print
+            BEQ PrDec16Next
+PrDec16Digit:
+            LDX #48                     ; ASC"0", No more zero padding
+            STX pad
+            ORA #48                     ; ASC"0", Print this digit
+PrDec16Print:
+            JSR CHROUT
+PrDec16Next:
+            DEY				; Loop for next digit
+            DEY
+            BPL PrDec16Lp1
+            RTS
+PrDec16Tens:
+            .word 1
+            .word 10
+            .word 100
+            .word 1000
+            .word 10000
+pad:	    .byte 0			; default 0 = no padding
+
+; Dump all elements of the INT stack (16-bit)
+;
+STACK:
+		pha
+		phx
+		ldx FPSP
+STACK0:
+		cpx #0
+		beq STACK1
+		dex
+		lda SIL,x
+		sta r0L
+		lda SIH,x
+		sta r0H
+		jsr PrHex16
+		PrintNewline
+		jmp STACK0
+STACK1:
+		plx
+		pla
+		rts
+
+; Dump FPTEMP variables (4 bytes)
+;
+TEMP:
+		pha
+		lda FPTEMP+2
+		sta r0L
+		lda FPTEMP+3
+		sta r0H
+		jsr PrHex16
+		lda #':'
+		jsr CHROUT
+		lda FPTEMP
+		sta r0L
+		lda FPTEMP+1
+		sta r0H
+		jsr PrHex16
+		PrintNewline
+		pla
+		rts

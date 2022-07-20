@@ -1,0 +1,638 @@
+;-----------------------------------------------------------------
+; FUNCTION: Print String without NEWLINE
+; INPUT:    r0 = string pointer
+;           
+; OUTPUT:   A,Y,X corrupted
+;-----------------------------------------------------------------
+PrString:
+            ldy #0
+PrString0:
+            lda (r0), y
+            beq PrString1
+            phy
+            jsr CHROUT
+            ply
+            iny
+            jmp PrString0
+PrString1:
+            rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Add two 16-bit numbers
+; INPUT:    r0 = left operand
+;           r1 = right operand
+;
+; OUTPUT:   r2 = result = r0 + r1
+;-----------------------------------------------------------------
+ADD16:
+            clc
+            lda r0L
+            adc r1L
+            sta r2L
+            lda r0H
+            adc r1H
+            sta r2H
+            rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Subtract two 16-bit numbers
+; INPUT:    r0 = left operand
+;           r1 = right operand
+;
+; OUTPUT:   r2 = result = r0 - r1
+;-----------------------------------------------------------------
+SUB16:
+            sec
+            lda r0L
+            sbc r1L
+            sta r2L
+            lda r0H
+            sbc r1H
+            sta r2H
+            rts
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-bit Binary Negation (two's complement)
+; INPUT:    r0
+;
+; OUTPUT:   r2 = 0 - r0 = ~r0 + 1 
+;-----------------------------------------------------------------
+NEG16:
+            SEC           ;Ensure carry is set
+            LDA #0        ;Load constant zero
+            SBC r0L       ;... subtract the least significant byte
+            STA r2L       ;... and store the result
+            LDA #0        ;Load constant zero again
+            SBC r0H       ;... subtract the most significant byte
+            STA r2H       ;... and store the result
+            RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 8-bit hexadecimal number padded with zeros
+; INPUT:    .A = value to print
+;
+; OUTPUT:   
+;-----------------------------------------------------------------
+PrHex8:
+            PHA      ; Save A
+            LSR A    ; Move top nybble to bottom nybble
+            LSR A
+            LSR A
+            LSR A
+            JSR PrNybble               ; Print this nybble
+            PLA                        ; Get A back and print bottom nybble
+PrNybble:
+            AND #15                    ; Keep bottom four bits
+            CMP #10                    ; If 0-9, jump to print
+            BCC PrDigit
+            ADC #6                     ; Convert ':' to 'A'
+PrDigit:
+            ADC #48        ; ASC"0"
+            JSR CHROUT     ; Convert to character and print
+            RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit hexadecimal number
+; INPUT:    r0 = Word to print
+;           
+; OUTPUT:   
+;-----------------------------------------------------------------
+PrHex16:
+            lda r0H
+            jsr PrHex8
+            lda r0L
+            jsr PrHex8
+            rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 8-bit decimal number padded with zeros
+; INPUT:    .A = value to print
+;           
+; OUTPUT:   
+;-----------------------------------------------------------------
+PrDec8:
+            LDX #$FF                   ; Prepare for subtraction
+            SEC
+PrDec100:
+            INX                        ; Count how many 100s
+            SBC #100
+            BCS PrDec100
+            ADC #100                   ; Print the 100s
+            JSR PrDecDigit
+            LDX #$FF                   ; Prepare for subtraction
+            SEC
+PrDec10:
+            INX                        ; Count how many 10s
+            SBC #10
+            BCS PrDec10
+            ADC #10                    ; Print the 10s
+            JSR PrDecDigit
+            TAX                        ; Pass 1s into X
+PrDecDigit:
+            PHA                        ; Save A, pass digit to A
+            TXA
+            ORA #48                    ; Convert to character (ASC"0") and print it
+            JSR CHROUT
+            PLA                        ; Restore A and return
+            RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: Print BYTE (decimal) without '0' padding
+; INPUT:    .A = byte
+;
+; OUTPUT:   .A, .X, .Y corrupted
+;-----------------------------------------------------------------
+PrByte:
+	ldy #$2f
+	ldx #$3a
+	sec
+PrByteL1:
+	iny
+	sbc #100
+	bcs PrByteL1
+PrByteL2:
+	dex
+	adc #10
+	bmi PrByteL2
+	adc #$2f
+	pha		; Save .A to print last
+	cpy #$30	; ASC"0"
+	beq PrByteL3	; 100s is ZERO, check 10s
+	tya		; Not ZERO, print .Y = hundred's
+	jsr CHROUT
+	jmp PrByteL4	; Print 10s even if ZERO
+PrByteL3:
+	cpx #$30	; ASC"0"
+	beq PrByteL5	; 10s also ZERO, print 1s
+PrByteL4:
+	txa		; Print .X = ten's
+	jsr CHROUT
+PrByteL5:
+	pla		; Print .A = one's
+	jsr CHROUT
+	rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit decimal number SIGNED
+; INPUT:    r0 = value to print
+;           .Y  = pad character
+;           (e.g. '0' #48 or ' ' #32 or #0 for none)
+;
+; OUTPUT:   r0 corrupted with NEG16 value
+;-----------------------------------------------------------------
+PrSgnDec16:
+		phy			; save .Y = padding char
+		lda r0H			; load MSB
+	    	and #$80		; check for sign bit of MSB
+	    	beq PrSgnDec16L1	; positive, print normally
+	    	jsr NEG16		; negative, NEG16 result at r2
+	    	lda #'-'		; print '-' sign
+	    	jsr CHROUT
+		MoveW r2, r0		; load new positive value
+PrSgnDec16L1:
+		ply			; restore .Y
+;-----------------------------------------------------------------
+; FUNCTION: Print 16-bit decimal number UNSIGNED
+; INPUT:    r0 = value to print, copied to scratch r11
+;           .Y = pad character
+;           (e.g. '0' #48 or ' ' #32 or #0 for none)
+;
+; INPUT:    at PrDec16Lp1
+;           Y=(number of digits)*2-2, e.g. 8 for 5 digits
+;
+; OUTPUT:   A,X,Y corrupted
+;-----------------------------------------------------------------
+PrDec16:
+	    STY pad			; Save new padding character
+	    MoveW r0, r11
+            LDY #8			; Offset to powers of ten
+PrDec16Lp1:
+            LDX #$FF			; Start with digit=-1
+            SEC
+PrDec16Lp2:
+            LDA r11L			; Subtract current tens
+            SBC PrDec16Tens+0,Y
+            STA r11L
+            LDA r11H
+            SBC PrDec16Tens+1,Y
+            STA r11H
+            INX				; Loop until <0
+            BCS PrDec16Lp2
+            LDA r11L  ; Add current tens back in
+            ADC PrDec16Tens+0,Y
+            STA r11L
+            LDA r11H
+            ADC PrDec16Tens+1,Y
+            STA r11H
+            TXA				; Not zero, print it
+            BNE PrDec16Digit
+            LDA pad			; pad<>0, use it
+            BNE PrDec16Print
+            BEQ PrDec16Next
+PrDec16Digit:
+            LDX #48                     ; ASC"0", No more zero padding
+            STX pad
+            ORA #48                     ; ASC"0", Print this digit
+PrDec16Print:
+            JSR CHROUT
+PrDec16Next:
+            DEY				; Loop for next digit
+            DEY
+            BPL PrDec16Lp1
+            RTS
+PrDec16Tens:
+            .word 1
+            .word 10
+            .word 100
+            .word 1000
+            .word 10000
+pad:	    .byte 0			; default 0 = no padding
+
+;-----------------------------------------------------------------
+; FUNCTION: DIV, MOD on 8-bit/8-bit (unsigned)
+; INPUT:    r0L = N, numerator or dividend
+;           r1L = D, denominator or divisor
+;
+; OUTPUT:   r0L = Q, quotient
+;           Acc = R, remainder
+;-----------------------------------------------------------------
+DivMod8:
+                LDA #0
+                LDX #8
+                ASL r0L
+DivMod8Loop:		
+                ROL
+                CMP r1L
+                BCC DivMod8Loop2
+                SBC r1L
+DivMod8Loop2:
+                ROL r0L
+                DEX
+                BNE DivMod8Loop
+                RTS
+                
+;-----------------------------------------------------------------
+; FUNCTION: DIV, MOD on 16-bit/16-bit (unsigned)
+; INPUT:    r0  = N, numerator or dividend
+;           r1  = D, denominator or divisor
+;
+; OUTPUT:   r0  = Q, quotient
+;           r2  = R, remainder
+;-----------------------------------------------------------------
+DivMod16:
+	lda #0	        ;preset remainder to 0
+        sta r2L
+        sta r2H
+        ldx #16	        ;repeat for each bit: ...
+divloop:
+	asl r0L		;dividend lb & hb*2, msb -> Carry
+        rol r0H	
+        rol r2L		;remainder lb & hb * 2 + msb from carry
+        rol r2H
+        lda r2L
+        sec
+        sbc r1L		;substract divisor to see if it fits in
+        tay	        ;lb result -> Y, for we may need it later
+        lda r2H
+        sbc r1H
+        bcc skip	;if carry=0 then divisor didn't fit in yet
+        sta r2H		;else save substraction result as new remainder,
+        sty r2L	
+        inc r0L		;and INCrement result cause divisor fit in 1 times
+skip:
+	dex
+        bne divloop	
+        rts
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-Bit Multiplication (shift-and-add) -> 32-bit result
+; INPUT:    r0 = left 16-bit operand
+;           r1 = right 16-bit operand
+;
+; OUTPUT:   r0, r1 = 32-bit result; r0H:r0L:r1H:r1L
+;	    e.g. $12345678 -> $34:$12:$78:$56
+;           r11 = scratch
+;-----------------------------------------------------------------
+MUL16:
+		LDA  r1L	; Get the multiplicand and
+		STA  r11L       ; put it in the scratchpad.
+		LDA  r1H
+		STA  r11H
+		STZ  r1L	; Zero-out the original multiplicand area.
+		STZ  r1H
+		LDY  #10H       ; We'll loop 16 times.
+MUL16L1:	ASL  r1L	; Shift the entire 32 bits over one bit position.
+		ROL  r1H
+		ROL  r0L
+		ROL  r0H
+		BCC  MUL16L2    ; Skip the adding-in to the result if
+				; the high bit shifted out was 0.
+		CLC		; Else, add multiplier to intermediate result.
+		LDA  r11L
+		ADC  r1L
+		STA  r1L
+		LDA  r11H
+		ADC  r1H
+		STA  r1H
+		LDA  #0		; If C=1, incr lo byte of hi cell.
+		ADC  r0L
+		STA  r0L
+MUL16L2:	DEY		; If we haven't done 16 iterations yet,
+		BNE  MUL16L1    ; then go around again.
+		RTS
+    
+;-----------------------------------------------------------------
+; FUNCTION: 16-Bit Multiplication (shift-and-rotate) -> 32-bit result
+; INPUT:    r0 = left 16-bit operand (multiplier)
+;           r1 = right 16-bit operand (multiplicand)
+;           
+; OUTPUT:   r2-r3; r3 = MSW (most-significant word), r2 = LSW 
+;	    no scratch needed!
+;-----------------------------------------------------------------
+mult16:		lda	#$00
+		sta	r2+2		; clear upper bits of product
+		sta	r2+3 
+		ldx	#$10		; set binary count to 16 
+shift_r:	lsr	r0+1		; divide multiplier by 2 
+		ror	r0
+		bcc	rotate_r 
+		lda	r2+2		; get upper half of product and add multiplicand
+		clc
+		adc	r1
+		sta	r2+2
+		lda	r2+3 
+		adc	r1+1
+rotate_r:	ror			; rotate partial product 
+		sta	r2+3 
+		ror	r2+2
+		ror	r2+1 
+		ror	r2 
+		dex
+		bne	shift_r 
+		rts
+
+;-----------------------------------------------------------------
+; FUNCTION: Fast 8-bit Multiply by 10
+; INPUT:    .A = 0-25?
+;           
+;
+; OUTPUT:   .A
+;           
+;-----------------------------------------------------------------
+MUL108:
+	ASL         ;multiply by 2
+	STA TEMP    ;temp store in TEMP
+	ASL         ;again multiply by 2 (*4)
+	ASL         ;again multiply by 2 (*8)
+	CLC
+	ADC TEMP    ;as result, A = x*8 + x*2
+	RTS
+
+TEMP:   .byte 0
+
+;-----------------------------------------------------------------
+; FUNCTION: Fast 16-bit Multiply by 10
+; INPUT:    r0 = 16-bit integer NUM (max = $1999 = 6553)
+;
+; OUTPUT:   r2 = 16-bit integer RESULT
+;-----------------------------------------------------------------
+MUL10:
+	LDA r0L       ;Start with RESULT = NUM
+	STA r2L
+	LDA r0H
+	STA r2H
+	ASL r2L
+	ROL r2H  ;RESULT = 2*NUM
+	ASL r2L
+	ROL r2H  ;RESULT = 4*NUM
+	CLC
+	LDA r0L
+	ADC r2L
+	STA r2L
+	LDA r0H
+	ADC r2H
+	STA r2H  ;RESULT = 5*NUM
+	ASL r2L
+	ROL r2H  ;RESULT = 10*NUM
+	RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-bit Integer Squareroot = INT(SQRT(N))
+; INPUT:    r0 = operand MHI/MLO
+;
+; OUTPUT:   .Y = INT(SQRT(N)) without rounding
+;           r11H = scratch THI/TLO
+;-----------------------------------------------------------------
+SQRT16:
+	LDY #$00	; R = 0
+	LDX #$07
+	CLC		; clear bit 16 of M
+loop:
+	TYA
+	ORA stab-1,X
+	STA r11H	; (R ASL 8) | (D ASL 7)
+	LDA r0H
+	BCS skip0       ; M >= 65536? then T <= M is always true
+	CMP r11H
+	BCC skip1       ; T <= M
+skip0:
+	SBC r11H
+	STA r0H		; M = M - T
+	TYA
+	ORA stab,x
+	TAY		; R = R OR D
+skip1:
+	ASL r0L
+	ROL r0H		; M = M ASL 1
+	DEX
+	BNE loop
+
+	; last iteration
+
+	BCS skip2
+	STY r11H
+	LDA r0L
+	CMP #$80
+	LDA r0H
+	SBC r11H
+	BCC skip3
+skip2:
+	INY		; R = R OR D (D is 1 here)
+skip3:
+	RTS
+stab:   .BYTE $01,$02,$04,$08,$10,$20,$40,$80
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-bit Integer Squareroot with Remainder (BEST?)
+; INPUT:    r0 = unsigned 16-bit integer
+;           
+;
+; OUTPUT:   r2L = 0-255 8-bit Root
+;           r1  = 0-511 9-bit Remainder
+;	    r11 = scratch
+;-----------------------------------------------------------------
+SqRoot16:
+	LDA	#$00		; clear A
+	STA	r1L		; clear remainder low byte
+	STA	r1H		; clear remainder high byte
+	STA	r2L		; clear Root
+	LDX	#$08		; 8 pairs of bits to do
+Loop:
+	ASL	r2L		; Root = Root * 2
+
+	ASL	r0L		; shift highest bit of number ..
+	ROL	r0H		;
+	ROL	r1L		; .. into remainder
+	ROL	r1H		;
+
+	ASL	r0L		; shift highest bit of number ..
+	ROL	r0H		;
+	ROL	r1L		; .. into remainder
+	ROL	r1H		;
+
+	LDA	r2L		; copy Root ..
+	STA	r11L		; .. to templ
+	LDA	#$00		; clear byte
+	STA	r11H		; clear temp high byte
+
+	SEC			; +1
+	ROL	r11L		; temp = temp * 2 + 1
+	ROL	r11H		;
+
+	LDA	r1H		; get remainder high byte
+	CMP	r11H		; comapre with partial high byte
+	BCC	Next		; skip sub if remainder high byte smaller
+
+	BNE	Subtr		; do sub if <> (must be remainder>partial !)
+
+	LDA	r1L		; get remainder low byte
+	CMP	r11L		; comapre with partial low byte
+	BCC	Next		; skip sub if remainder low byte smaller
+
+				; else remainder>=partial so subtract then
+				; and add 1 to root. carry is always set here
+Subtr:
+	LDA	r1L		; get remainder low byte
+	SBC	r11L		; subtract partial low byte
+	STA	r1L		; save remainder low byte
+	LDA	r1H		; get remainder high byte
+	SBC	r11H		; subtract partial high byte
+	STA	r1H		; save remainder high byte
+
+	INC	r2L		; increment Root
+Next:
+	DEX			; decrement bit pair count
+	BNE	Loop		; loop if not all done
+
+	RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: 16-bit unsigned integer square of a signed 16-bit integer
+; INPUT:    r0 = signed 16-bit integer, 0-255 (no checking) Numberl/h
+;           useful to draw circles: x^2+y^2=r^2
+;
+; OUTPUT:   r2   = unsigned 16-bit integer Squarel/h
+;           r11L = scratch Tempsq
+;-----------------------------------------------------------------
+Square16:
+        LDA     #$00		; clear A
+        STA     r2L		; clear square low byte
+				; (no need to clear the high byte, it gets
+				; shifted out)
+        LDA	r0L		; get number low byte
+	LDX	r0H		; get number high  byte
+	BPL	NoNneg      ; if +ve don't negate it
+                            ; else do a two's complement
+	EOR	#$FF        ; invert
+        SEC	            ; +1
+	ADC	#$00        ; and add it
+
+NoNneg:
+	STA	r11L      ; save ABS(number)
+	LDX	#$08        ; set bit count
+
+Nextr2bit:
+	ASL	r2L     ; low byte *2
+	ROL	r2H     ; high byte *2+carry from low
+	ASL	A           ; shift number byte
+	BCC	NoSqadd     ; don't do add if C = 0
+	TAY                 ; save A
+	CLC                 ; clear carry for add
+	LDA	r11L      ; get number
+	ADC	r2L     ; add number^2 low byte
+	STA	r2L     ; save number^2 low byte
+	LDA	#$00        ; clear A
+	ADC	r2H     ; add number^2 high byte
+	STA	r2H     ; save number^2 high byte
+	TYA                 ; get A back
+
+NoSqadd:
+	DEX                 ; decrement bit count
+	BNE	Nextr2bit   ; go do next bit
+	RTS
+
+;-----------------------------------------------------------------
+; FUNCTION: 8-bit Sine Table from Parabolas, 6% error deviation
+; INPUT:    <none>
+;           
+; OUTPUT:   table offset: 0-255 ($00-$ff)
+;			  each section 0-64-128-192-255
+;			  thus, (2*pi)/4 = 64 per section
+;	       amplitude: 0-255 ($00-$ff), "zero" = 127/128
+;			  min = 0, max = 255
+;           
+;-----------------------------------------------------------------
+initSineTable:
+ 
+	ldy #$3f
+	ldx #$00
+ 
+; Accumulate the delta (normal 16-bit addition)
+SineStart:
+	lda value
+	clc
+	adc delta
+	sta value
+	lda value+1
+	adc delta+1
+	sta value+1
+ 
+; Reflect the value around for a sine wave
+	sta sine+$c0,x  ; Sine 4th section
+	sta sine+$80,y  ; Sine 3rd section
+	sta cosine+$80,x  ; Cosine 3rd section
+	sta cosine+$40,y  ; Cosine 2nd section
+	eor #$ff
+	sta sine+$40,x  ; Sine 2nd section
+	sta sine+$00,y  ; Sine 1st section
+	sta cosine+$00,x  ; Cosine 1st section
+	sta cosine+$c0,y  ; Cosine 4th section
+ 
+; Increase the delta, which creates the "acceleration" for a parabola
+	lda delta
+	adc #$10   ; this value adds up to the proper amplitude
+	sta delta
+	bcc SineLoop
+	inc delta+1
+SineLoop:
+ 
+; Loop
+	inx
+	dey
+	bpl SineStart
+	rts
+ 
+value:  .word 0
+delta:  .word 0
+sine:   .res 256
+cosine: .res 256
+
+;-----------------------------------------------------------------
+; FUNCTION: 
+; INPUT:    
+;           
+;
+; OUTPUT:   
+;           
+;-----------------------------------------------------------------
+

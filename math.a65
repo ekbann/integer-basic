@@ -1,0 +1,582 @@
+; Integer & Fixed-Point (FP) Routines
+;
+
+; Push 16-bit INT in r0 to top of stack (SIL,SIH)
+;
+PUSH:
+		pha
+		phx
+		ldx FPSP
+		lda r0L
+		sta SIL,x
+		lda r0H
+		sta SIH,x
+		inx		; FPSP += 1
+		stx FPSP	; update FPSP
+		plx
+		pla
+		rts
+
+; Pull 16-bit INT from top of stack (SIL,SIH) to r0
+;
+PULL:
+		pha
+		phx
+		ldx FPSP	; load stack pointer
+		dex		; point to topmost element
+		lda SIL,x
+		sta r0L
+		lda SIH,x
+		sta r0H
+		stx FPSP	; update FPSP to new empty location
+		plx
+		pla
+		rts
+
+; Duplicate top of stack
+; ( a -- a a )
+;
+DUP:
+		pha
+		phx
+		ldx FPSP
+		lda SIL-1,x	; copy SIL below
+		sta SIL,x	; ... to current
+		lda SIH-1,x	; copy SIH below
+		sta SIH,x	; ... to current
+		inx		; point to next empty location
+		stx FPSP
+		plx
+		pla
+		rts
+
+; Drop the top of stack
+; ( a -- )
+;
+DROP:
+		dec FPSP	; point to TOP "a" element, now empty
+		rts
+
+; Swap top two elements
+; ( a b -- b a )
+;
+SWAP:
+		pha
+		phx
+		ldx FPSP
+		lda SIL-2,x
+		sta FPTEMP
+		lda SIH-2,x
+		sta FPTEMP+1
+		lda SIL-1,x
+		sta SIL-2,x
+		lda SIH-1,x
+		sta SIH-2,x
+		lda FPTEMP
+		sta SIL-1,x
+		lda FPTEMP+1
+		sta SIH-1,x
+		plx
+		pla
+		rts
+
+; Compare if equal (a == b)
+; ( a b -- boolean )
+;
+EQ:
+		pha
+		phx
+		ldx FPSP
+		dex
+		lda SIL-1,x     ; compare low bytes
+		cmp SIL,x
+		bne EQFALSE
+		lda SIH-1,x     ; compare high bytes
+		cmp SIH,x
+		beq EQTRUE
+EQFALSE:	; continue if false
+		stz SIH-1,x
+		stz SIL-1,x     ; store 0 (FALSE)
+		jmp EQEND
+EQTRUE:		stz SIH-1,x
+		lda #1
+		sta SIL-1,x     ; store 1 (TRUE)
+EQEND:		stx FPSP
+		plx
+		pla
+		rts
+
+; Compare if not equal (a <> b)
+; ( a b -- boolean )
+;
+NEQ:
+		pha
+		phx
+		ldx FPSP
+		dex
+		lda SIL-1,x     ; compare low bytes
+		cmp SIL,x
+		bne NEQTRUE
+		lda SIH-1,x     ; compare high bytes
+		cmp SIH,x
+		bne NEQTRUE
+		; continue if false
+		stz SIH-1,x
+		stz SIL-1,x     ; store 0 (FALSE)
+		jmp NEQEND
+NEQTRUE:	stz SIH-1,x
+		lda #1
+		sta SIL-1,x     ; store 1 (TRUE)
+NEQEND:		stx FPSP
+		plx
+		pla
+		rts
+
+; Compare if greater than (a > b) is the same as (b < a)
+; ( a b -- boolean )
+;
+GT:
+		jsr SWAP
+; Compare if less than (a < b)
+; ( a b -- boolean )
+;
+LT:
+		pha
+		phx
+		ldx FPSP
+		dex
+		lda SIH-1,x     ; compare high bytes
+		cmp SIH,x
+		bcc LTTRUE      ; if a.H < b.H then a < b
+		;bne LT2      ; if a.H <> b.H then a > b (so a >= b)
+		lda SIL-1,x     ; compare low bytes
+		cmp SIL,x
+		bcc LTTRUE      ; if a.L < b.L then a < b
+		; continue if false
+		stz SIH-1,x
+		stz SIL-1,x       ; store 0 (FALSE)
+		jmp LTEND
+LTTRUE:		stz SIH-1,x
+		lda #1
+		sta SIL-1,x     ; store 1 (TRUE)
+LTEND:		stx FPSP
+		plx
+		pla
+		rts
+
+; Compare if lesser-equal than (a <= b) is the same as (b >= a)
+; ( a b -- boolean )
+;
+LE:
+		jsr SWAP
+; Compare if greater-equal than (a >= b)
+; ( a b -- boolean )
+;
+GE:
+		pha
+		phx
+		ldx FPSP
+		dex
+		lda SIH-1,x     ; compare high bytes
+		cmp SIH,x
+		bcc GEFALSE     ; if a.H < b.H then a < b
+		bne GETRUE      ; if a.H <> b.H then a > b (so a >= b)
+		lda SIL-1,x     ; compare low bytes
+		cmp SIL,x
+		bcs GETRUE      ; if a.L >= b.L then a >= b
+GEFALSE:	; continue if false
+		stz SIH-1,x
+		stz SIL-1,x       ; store 0 (FALSE)
+		jmp GEEND
+GETRUE:		stz SIH-1,x
+		lda #1
+		sta SIL-1,x     ; store 1 (TRUE)
+GEEND:		stx FPSP
+		plx
+		pla
+		rts
+
+; Subtract top two items on the stack
+; ( a b -- a-b )
+;
+SUB:
+		pha
+		phx
+		ldx FPSP
+		dex		; point to TOP "b" element
+		sec
+		lda SIL-1,x	; load BELOW "a"
+		sbc SIL,x	; subtract TOP "b" from BELOW "a"
+		sta SIL-1,x	; save to BELOW "a"
+		lda SIH-1,x	; load BELOW "a"
+		sbc SIH,x	; subtract TOP "b" from BELOW "a"
+		sta SIH-1,x	; save to BELOW "a"
+		stx FPSP	; drop "b", now empty
+		plx
+		pla
+		rts
+
+; Add top two numbers on stack
+; ( a b -- a+b )
+;
+ADD:
+		pha
+		phx
+		ldx FPSP
+		dex		; point to TOP "b" element
+		clc
+		lda SIL-1,x	; load BELOW "a"
+		adc SIL,x	; add TOP "b" to BELOW "a"
+		sta SIL-1,x	; save to BELOW "a"
+		lda SIH-1,x	; load BELOW "a"
+		adc SIH,x	; add TOP "b" to BELOW "a"
+		sta SIH-1,x	; save to BELOW "a"
+		stx FPSP	; drop "b", now empty
+		plx
+		pla
+		rts
+
+; Multiply top of stack by two
+; ( a -- a*2 )
+;
+MUL2:
+		pha
+		phx
+		ldx FPSP
+		asl SIL-1,x	; ASL the element below
+		rol SIH-1,x	; ROL the element below
+		plx
+		pla
+		rts
+
+; Multiply top of stack by ten
+; ( a -- a*10 )
+;
+MUL10:
+		jsr DUP
+		jsr MUL2
+		jsr MUL2
+		jsr ADD
+		jmp MUL2
+
+;
+;
+;
+MUL256:
+
+; Negate top of stack
+; ( a -- -a )
+;
+NEG:
+		pha
+		phx
+		ldx FPSP
+		sec
+		lda #0
+		sbc SIL-1,x
+		sta SIL-1,x
+		lda #0
+		sbc SIH-1,x
+		sta SIH-1,x
+		plx
+		pla
+		rts
+
+; Multiply (unsigned) top two numbers on stack (shift-rotate)
+; ( a b -- a*b )
+;
+; 32-bit result: $aa.bb.cc.dd
+; FPTEMP=dd, FPTEMP+1=cc, FPTEMP+2=bb, FPTEMP+3=aa 
+;
+; For 16-bit results, it works with SIGNED numbers!
+;
+UMUL:
+		pha
+		phx
+		phy
+		lda #$00
+		sta FPTEMP+2	; clear upper bits of product
+		sta FPTEMP+3
+		ldx FPSP	; SP points to next EMPTY element
+		dex		; SP now points to TOP element
+		ldy #$10	; set binary count to 16
+UMSHR:				; shift right
+		lsr SIH-1,x	; divide multiplier by 2
+		ror SIL-1,x
+		bcc UMROR
+		lda FPTEMP+2	; get upper half of product and add multiplicand
+		clc
+		adc SIL,x
+		sta FPTEMP+2
+		lda FPTEMP+3
+		adc SIH,x
+UMROR:				; rotate right
+		ror		; rotate partial product
+		sta FPTEMP+3
+		ror FPTEMP+2
+		ror FPTEMP+1
+		ror FPTEMP
+		dey
+		bne UMSHR
+		stx FPSP	; drop "b", now empty
+		lda FPTEMP	; LO byte of least-significant WORD
+		sta SIL-1,x	; replace "a" with least-significant WORD
+		lda FPTEMP+1	; HI byte of least-significant WORD
+		sta SIH-1,x	; most-significant WORD in FPTEMP+2/3
+		ply
+		plx
+		pla
+		rts
+
+; Multiply (unsigned) top two LSB (8-bit) numbers on stack (shift-rotate)
+; ( a b -- lsb(a)*lsb(b) )
+;
+; 16-bit result: on top of stack
+;
+; For 8-bit results, it works with SIGNED numbers!
+;
+UMUL8:
+		pha
+		phx
+		phy
+		ldx FPSP
+		dex		; point to TOP element
+	        lda #$00
+        	ldy #$08
+        	clc
+UM8ADD:
+		bcc UM8ROR
+	        clc
+        	adc SIL,x
+UM8ROR:
+		ror
+        	ror SIL-1,x
+        	dey
+        	bpl UM8ADD
+		sta SIH-1,x	; store the high-byte
+		stx FPSP
+		ply
+		plx
+		pla
+        	rts
+
+; Divide (unsigned) top two numbers on stack; return rounding bit in carry
+; ( a b -- a/b )
+;
+; FPTEMP+0,FPTEMP+1 = remainder
+;
+UDIV:
+		pha
+		phx
+		phy
+		lda #$00
+		sta FPTEMP	; clear remainder
+		sta FPTEMP+1
+		ldx FPSP
+		dex
+		ldy #16		;repeat for each bit: ...
+UDLOOP:
+		asl SIL-1,x	;dividend lb & hb*2, msb -> Carry
+		rol SIH-1,x
+		rol FPTEMP	;remainder lb & hb * 2 + msb from carry
+		rol FPTEMP+1
+		lda FPTEMP
+		sec
+		sbc SIL,x	;substract divisor to see if it fits in
+		sta UDSAVE	;lb result -> save, for we may need it later
+		lda FPTEMP+1
+		sbc SIH,x
+		bcc UDSKIP	;if carry=0 then divisor didn't fit in yet
+		sta FPTEMP+1	;else save substraction result as new remainder,
+		lda UDSAVE	;no need to pha/pla
+		sta FPTEMP
+		inc SIL-1,x	;and INCrement result cause divisor fit in 1 times
+UDSKIP:
+		dey
+		bne UDLOOP
+		stx FPSP
+		ply
+		plx
+		pla
+		rts
+
+UDSAVE:		.res 1		; ### maybe use FPTEMP+3 (ZP) as scratch
+
+; Divide (unsigned) the top of the stack by 2; return rounding bit in carry
+; ( a -- a/2 )
+;
+UDIV2:
+		pha
+		phx
+		ldx FPSP
+		lsr SIH-1,x
+		ror SIL-1,x
+		plx
+		pla
+		rts
+
+; Divide (unsigned) top two numbers on stack with UDIV; return remainder on stack
+; ( a b -- a%b )
+;
+UMOD:
+		jsr UDIV	;call UDIV which does both div and mod
+		pha
+		phx
+		ldx FPSP
+		lda FPTEMP      ;move remainder to top of stack
+		sta SIL-1,x
+		lda FPTEMP+1
+		sta SIH-1,x
+		plx
+		pla
+		rts
+
+; Return absolute value of top number on stack
+; ( a -- abs(a))
+;
+ABS:
+		pha
+		phx
+		ldx FPSP
+		lda SIH-1,x     ;load HI byte from top of stack
+		bpl ABSEND      ;jump if N flag (negative) not set
+		jsr NEG
+ABSEND:
+		plx
+		pla
+		rts
+
+;
+;
+;
+SGN:
+
+;
+;
+;
+RND:
+
+;
+;
+;
+SQRT:
+
+; Table used for LSB (8-bit) squares (range 0-255)
+; ( a -- lsb(a)^2 )
+;
+SQR8:
+SQRHI:
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $00, $00, $00, $00, $00, $00, $00, $00
+	.byte $01, $01, $01, $01, $01, $01, $01, $02
+	.byte $02, $02, $02, $02, $03, $03, $03, $03
+	.byte $04, $04, $04, $04, $05, $05, $05, $05
+	.byte $06, $06, $06, $07, $07, $07, $08, $08
+	.byte $09, $09, $09, $0a, $0a, $0a, $0b, $0b
+	.byte $0c, $0c, $0d, $0d, $0e, $0e, $0f, $0f
+	.byte $10, $10, $11, $11, $12, $12, $13, $13
+	.byte $14, $14, $15, $15, $16, $17, $17, $18
+	.byte $19, $19, $1a, $1a, $1b, $1c, $1c, $1d
+	.byte $1e, $1e, $1f, $20, $21, $21, $22, $23
+	.byte $24, $24, $25, $26, $27, $27, $28, $29
+	.byte $2a, $2b, $2b, $2c, $2d, $2e, $2f, $30
+	.byte $31, $31, $32, $33, $34, $35, $36, $37
+	.byte $38, $39, $3a, $3b, $3c, $3d, $3e, $3f
+	.byte $40, $41, $42, $43, $44, $45, $46, $47
+	.byte $48, $49, $4a, $4b, $4c, $4d, $4e, $4f
+	.byte $51, $52, $53, $54, $55, $56, $57, $59
+	.byte $5a, $5b, $5c, $5d, $5f, $60, $61, $62
+	.byte $64, $65, $66, $67, $69, $6a, $6b, $6c
+	.byte $6e, $6f, $70, $72, $73, $74, $76, $77
+	.byte $79, $7a, $7b, $7d, $7e, $7f, $81, $82
+	.byte $84, $85, $87, $88, $8a, $8b, $8d, $8e
+	.byte $90, $91, $93, $94, $96, $97, $99, $9a
+	.byte $9c, $9d, $9f, $a0, $a2, $a4, $a5, $a7
+	.byte $a9, $aa, $ac, $ad, $af, $b1, $b2, $b4
+	.byte $b6, $b7, $b9, $bb, $bd, $be, $c0, $c2
+	.byte $c4, $c5, $c7, $c9, $cb, $cc, $ce, $d0
+	.byte $d2, $d4, $d5, $d7, $d9, $db, $dd, $df
+	.byte $e1, $e2, $e4, $e6, $e8, $ea, $ec, $ee
+	.byte $f0, $f2, $f4, $f6, $f8, $fa, $fc, $fe
+SQRLO:
+	.byte $00, $01, $04, $09, $10, $19, $24, $31
+	.byte $40, $51, $64, $79, $90, $a9, $c4, $e1
+	.byte $00, $21, $44, $69, $90, $b9, $e4, $11
+	.byte $40, $71, $a4, $d9, $10, $49, $84, $c1
+	.byte $00, $41, $84, $c9, $10, $59, $a4, $f1
+	.byte $40, $91, $e4, $39, $90, $e9, $44, $a1
+	.byte $00, $61, $c4, $29, $90, $f9, $64, $d1
+	.byte $40, $b1, $24, $99, $10, $89, $04, $81
+	.byte $00, $81, $04, $89, $10, $99, $24, $b1
+	.byte $40, $d1, $64, $f9, $90, $29, $c4, $61
+	.byte $00, $a1, $44, $e9, $90, $39, $e4, $91
+	.byte $40, $f1, $a4, $59, $10, $c9, $84, $41
+	.byte $00, $c1, $84, $49, $10, $d9, $a4, $71
+	.byte $40, $11, $e4, $b9, $90, $69, $44, $21
+	.byte $00, $e1, $c4, $a9, $90, $79, $64, $51
+	.byte $40, $31, $24, $19, $10, $09, $04, $01
+	.byte $00, $01, $04, $09, $10, $19, $24, $31
+	.byte $40, $51, $64, $79, $90, $a9, $c4, $e1
+	.byte $00, $21, $44, $69, $90, $b9, $e4, $11
+	.byte $40, $71, $a4, $d9, $10, $49, $84, $c1
+	.byte $00, $41, $84, $c9, $10, $59, $a4, $f1
+	.byte $40, $91, $e4, $39, $90, $e9, $44, $a1
+	.byte $00, $61, $c4, $29, $90, $f9, $64, $d1
+	.byte $40, $b1, $24, $99, $10, $89, $04, $81
+	.byte $00, $81, $04, $89, $10, $99, $24, $b1
+	.byte $40, $d1, $64, $f9, $90, $29, $c4, $61
+	.byte $00, $a1, $44, $e9, $90, $39, $e4, $91
+	.byte $40, $f1, $a4, $59, $10, $c9, $84, $41
+	.byte $00, $c1, $84, $49, $10, $d9, $a4, $71
+	.byte $40, $11, $e4, $b9, $90, $69, $44, $21
+	.byte $00, $e1, $c4, $a9, $90, $79, $64, $51
+	.byte $40, $31, $24, $19, $10, $09, $04, $01
+
+; Sine/Cosine Table is 320 bytes long (256 + 64)
+; https://gist.github.com/funkfinger/965900
+;
+SINE:	; first quadrant 0-63
+	.byte $80, $83, $86, $89, $8C, $90, $93, $96
+	.byte $99, $9C, $9F, $A2, $A5, $A8, $AB, $AE
+	.byte $B1, $B3, $B6, $B9, $BC, $BF, $C1, $C4
+	.byte $C7, $C9, $CC, $CE, $D1, $D3, $D5, $D8
+	.byte $DA, $DC, $DE, $E0, $E2, $E4, $E6, $E8
+	.byte $EA, $EB, $ED, $EF, $F0, $F1, $F3, $F4
+	.byte $F5, $F6, $F8, $F9, $FA, $FA, $FB, $FC
+	.byte $FD, $FD, $FE, $FE, $FE, $FF, $FF, $FF
+COSINE:	; second quadrant 64-127
+	.byte $FF, $FF, $FF, $FF, $FE, $FE, $FE, $FD
+	.byte $FD, $FC, $FB, $FA, $FA, $F9, $F8, $F6
+	.byte $F5, $F4, $F3, $F1, $F0, $EF, $ED, $EB
+	.byte $EA, $E8, $E6, $E4, $E2, $E0, $DE, $DC
+	.byte $DA, $D8, $D5, $D3, $D1, $CE, $CC, $C9
+	.byte $C7, $C4, $C1, $BF, $BC, $B9, $B6, $B3
+	.byte $B1, $AE, $AB, $A8, $A5, $A2, $9F, $9C
+	.byte $99, $96, $93, $90, $8C, $89, $86, $83
+	; third quadrant 128-191
+	.byte $80, $7D, $7A, $77, $74, $70, $6D, $6A
+	.byte $67, $64, $61, $5E, $5B, $58, $55, $52
+	.byte $4F, $4D, $4A, $47, $44, $41, $3F, $3C
+	.byte $39, $37, $34, $32, $2F, $2D, $2B, $28
+	.byte $26, $24, $22, $20, $1E, $1C, $1A, $18
+	.byte $16, $15, $13, $11, $10, $0F, $0D, $0C
+	.byte $0B, $0A, $08, $07, $06, $06, $05, $04
+	.byte $03, $03, $02, $02, $02, $01, $01, $01
+	; fourth quadrant 191-255
+	.byte $01, $01, $01, $01, $02, $02, $02, $03
+	.byte $03, $04, $05, $06, $06, $07, $08, $0A
+	.byte $0B, $0C, $0D, $0F, $10, $11, $13, $15
+	.byte $16, $18, $1A, $1C, $1E, $20, $22, $24
+	.byte $26, $28, $2B, $2D, $2F, $32, $34, $37
+	.byte $39, $3C, $3F, $41, $44, $47, $4A, $4D
+	.byte $4F, $52, $55, $58, $5B, $5E, $61, $64
+	.byte $67, $6A, $6D, $70, $74, $77, $7A, $7D
+	; extra quadrant for COSINE
+	.byte $80, $83, $86, $89, $8C, $90, $93, $96
+	.byte $99, $9C, $9F, $A2, $A5, $A8, $AB, $AE
+	.byte $B1, $B3, $B6, $B9, $BC, $BF, $C1, $C4
+	.byte $C7, $C9, $CC, $CE, $D1, $D3, $D5, $D8
+	.byte $DA, $DC, $DE, $E0, $E2, $E4, $E6, $E8
+	.byte $EA, $EB, $ED, $EF, $F0, $F1, $F3, $F4
+	.byte $F5, $F6, $F8, $F9, $FA, $FA, $FB, $FC
+	.byte $FD, $FD, $FE, $FE, $FE, $FF, $FF, $FF
