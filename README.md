@@ -1,5 +1,4 @@
 INT BASIC aka GAME BASIC
-========================
 
 Why INTEGER BASIC? Woz explains: "I wrote down a complete syntax chart of the
 commands that were in the H-P BASIC manual, and I included floating point
