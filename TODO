@@ -1,2 +1,5 @@
 UNIT: loop1
     PRINT does not terminate with LF/CR.
+
+UNIT: assignment
+    variable "A" crashes ca65 assembler, conflict with cc65 macros

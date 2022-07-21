@@ -1,0 +1,24 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM ASSIGNMENT
+L20:		PushInt 3
+		PullVar A
+L30:		PushInt 1
+		PushVar A
+		PushInt 2
+		jsr ADD
+		jsr ADD
+		PullVar V
+L40:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L50:		rts
+
+S0:		.asciiz "the end"
+A:		.res 4
+V:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
