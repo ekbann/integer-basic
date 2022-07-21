@@ -1,0 +1,22 @@
+; C64/CX16 - BASIC header to auto-run the assembly code starting at address $810
+;
+; Compile with:		cl65 -o hello.prg -t cx16 -C cx16-asm.cfg hello.asm
+;
+; Run with: 		x16emu.exe -prg hello.prg -run -scale 2
+
+    .org $0801                  ; Assembled code should start at $0801
+                                ; (where BASIC programs start)
+                                ; The real program starts at $0810 = 2064
+
+; 10 SYS 2064
+    .byte $0C, $08              ; $080C - pointer to next line of BASIC code
+    .byte $0A, $00              ; 2-byte line number ($000A = 10)
+    .byte $9E                   ; SYS BASIC token
+    .byte $20                   ; [space]
+    .byte $32, $30, $36, $34	; $32="2",$30="0",$36="6",$34="4"
+    .byte $00                   ; End of Line
+    .byte $00, $00              ; This is address $080C containing
+                      		; 2-byte pointer to next line of BASIC code
+                      		; ($0000 = end of program)
+    .byte $00, $00              ; Padding so code starts at $0810
+

@@ -628,7 +628,11 @@ sine:   .res 256
 cosine: .res 256
 
 ;-----------------------------------------------------------------
-; FUNCTION: 
+; FUNCTION: UDIV10 - divide 16-bit unsigned INT by 10
+; Faster divmod by 10, Dividing a 16-bit number value by 10 is 
+; equivalent to (value*0xCCCD) >> 19 (using a full 16x16->32 multiply).
+; https://www.reddit.com/r/beneater/comments/hhq6tq/faster_divmod_by_10/
+;
 ; INPUT:    
 ;           
 ;
@@ -636,3 +640,13 @@ cosine: .res 256
 ;           
 ;-----------------------------------------------------------------
 
+
+
+;-----------------------------------------------------------------
+; FUNCTION: 
+; INPUT:    
+;           
+;
+; OUTPUT:   
+;           
+;-----------------------------------------------------------------

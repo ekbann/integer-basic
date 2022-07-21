@@ -1,0 +1,36 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+        StoreImm $fb2e, r0
+        jsr PUSH
+        jsr STACK
+        PrintNewline
+        jsr ABS
+        jsr STACK
+        PrintNewline
+        jsr TEMP
+        PrintNewline
+
+        StoreImm $fade, r0  ; 1314
+        ldy #0              ; padding with nothing
+        jsr PrSgnDec16
+        PrintNewline
+        jsr PUSH
+        jsr ABS
+        jsr PULL
+        ldy #0
+        jsr PrSgnDec16
+        PrintNewline
+
+        StoreImm $3039, r0  ; 12345
+        jsr PUSH
+        StoreImm $cccd, r0
+        jsr PUSH
+        jsr UMUL
+        jsr TEMP
+        ; need to shift bits right in FPTEMP 19 times
+
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
