@@ -52,6 +52,7 @@ Fixme:
 DIM: Re-dimension of a pre-existing A$; memory problems
 """
 
+from pickle import FALSE, TRUE
 import sys
 from lark import Lark, Tree, Token
 
@@ -61,12 +62,45 @@ except NameError:
     pass
 
 # Process command line arguments
+print_program = False
+print_tree = False
+print_parse = False
+compile_program = True
+has_basic_program = False
 if len(sys.argv) == 1:
-    print("Usage: " + argv[0] + " <BASIC Program>")
+    print("Usage: " + sys.argv[0] + " [options] filename.bas")
+    print("Integer BASIC compiler for 6502\n")
+    print("-b\tprint BASIC program")
+    print("-t\tprint BASIC tree")
+    print("-p\tprint Lark parse tree")
+    print("-n\tdo not compile BASIC program")
 else:
-    for arg in sys.argv:
-        print(arg)
-exit
+    for arg in sys.argv[1:]:
+        if arg[0] == '-':
+            if arg[1] == 'b':
+                print_program = True
+                #print("print BASIC program")
+            elif arg[1] == 't':
+                print_tree = True
+                #print("print BASIC tree")
+            elif arg[1] == 'p':
+                print_parse = True
+                #print("print parse tree")
+            elif arg[1] == 'n':
+                compile_program = False
+                #print("do not compile")
+            else:
+                print(arg + " :invalid option")
+                exit(1)
+        else:
+            has_basic_program = True
+            bas_program = arg
+            a65_program = bas_program.split(".")[0]+".a65"
+            #print(bas_program + " :BAS source")
+            #print(a65_program + " :A65 code")
+if not has_basic_program:
+    print("\nError: no .bas file provided")
+    exit(1)
 
 basic_grammar = """
     start: line+
@@ -158,17 +192,14 @@ basic_grammar = """
 
 parser = Lark(basic_grammar)
 
-text = '''
-10 REM TAB
-20 DIM B(16)
-25 DIM C(2*8)
-28 DIM D(6+10)
-30 PRINT "END"
-50 END
-'''
+text_file = open(bas_program, "r")
+text = text_file.read()
+text_file.close()
 
-print(text)
-print(parser.parse(text).pretty())
+if print_program:
+    print(text)
+if print_tree:
+    print(parser.parse(text).pretty())
 
 str_count = 0       # counter for string labels L0, L1, ...
 str_list = []       # list of strings to use .byte
@@ -470,10 +501,17 @@ def compile(t):
 ### MAIN BODY
 ###
 parse_tree = parser.parse(text)
-print(parse_tree)
+if print_parse:
+    print(parse_tree)
+    print("\n")
 
-print('\n.include \"macros.inc\"')
-print('.include \"header.inc\"\n')
+# Redirect to A65 file output
+original_stdout = sys.stdout    # Save a reference to the original standard output
+f = open(a65_program, 'w')
+sys.stdout = f                  # Change the standard output to the file we created.
+
+print('.include \"./includes/macros.inc\"')
+print('.include \"./includes/header.inc\"\n')
 
 
 for inst in parse_tree.children:
@@ -491,5 +529,9 @@ for var in dim_ptr_list:
 
 print("BUFFER:")   # label defining start of runtime DIM buffer address
 
-print('\n.include \"io.asm\"')
-print('.include \"math.asm\"')
+print('\n.include \"./includes/io.a65\"')
+print('.include \"./includes/math.a65\"')
+
+sys.stdout = original_stdout    # Reset the standard output to its original value
+print(sys.argv[0] + ": compilation completed successfully!")
+exit(0)
