@@ -1,0 +1,69 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM FOR LOOP
+L20:		PushInt 1
+		PullVar I
+		PushInt 10
+		PullVar IEND
+		PushInt 2
+		PullVar ISTEP
+LOOP0:
+		PushVar IEND
+		PushVar I
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP0CONT
+		jmp LOOP0END
+LOOP0CONT:
+L23:		PushInt 1
+		PullVar J
+		PushInt 3
+		PullVar JEND
+		PushInt 1
+		PullVar JSTEP
+LOOP1:
+		PushVar JEND
+		PushVar J
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP1CONT
+		jmp LOOP1END
+LOOP1CONT:
+L25:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L28:		PushVar J
+		PushVar JSTEP
+		jsr ADD
+		PullVar J
+		jmp LOOP1
+LOOP1END:
+L30:		LoadAddress S1		; to r0
+		jsr PrString
+		jsr Tab
+		LoadAddress S2		; to r0
+		jsr PrString
+L40:		PushVar I
+		PushVar ISTEP
+		jsr ADD
+		PullVar I
+		jmp LOOP0
+LOOP0END:
+L50:		rts
+
+S0:		.asciiz "inside loop"
+S1:		.asciiz "the"
+S2:		.asciiz "end"
+I:		.res 4
+IEND:		.res 4
+ISTEP:		.res 4
+J:		.res 4
+JEND:		.res 4
+JSTEP:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"

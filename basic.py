@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 ========================
 INT BASIC aka GAME BASIC

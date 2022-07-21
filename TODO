@@ -1,0 +1,2 @@
+UNIT: loop1
+    PRINT does not terminate with LF/CR.
