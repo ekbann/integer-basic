@@ -57,10 +57,10 @@ from pickle import FALSE, TRUE
 import sys
 from lark import Lark, Tree, Token
 
-try:
-    input = raw_input   # For Python2 compatibility
-except NameError:
-    pass
+#try:
+#    input = raw_input   # For Python2 compatibility
+#except NameError:
+#    pass
 
 # Process command line arguments
 print_program = False
@@ -506,33 +506,36 @@ if print_parse:
     print(parse_tree)
     print("\n")
 
-# Redirect to A65 file output
-original_stdout = sys.stdout    # Save a reference to the original standard output
-f = open(a65_program, 'w')
-sys.stdout = f                  # Change the standard output to the file we created.
+if compile_program:
+    # Redirect to A65 file output
+    original_stdout = sys.stdout    # Save a reference to the original standard output
+    f = open(a65_program, 'w')
+    sys.stdout = f                  # Change the standard output to the file we created.
 
-print('.include \"./includes/macros.inc\"')
-print('.include \"./includes/header.inc\"\n')
+    print('.include \"./includes/macros.inc\"')
+    print('.include \"./includes/header.inc\"\n')
 
+    for inst in parse_tree.children:
+        compile(inst)
 
-for inst in parse_tree.children:
-    compile(inst)
+    print()
+    for idx, val in enumerate(str_list):
+        print("S" + str(idx) + ":\t\t.asciiz " + val)
+    for var in var_id_list:
+        print(var + ":\t\t.res 4")
+    for var in dim_list:
+        print("{}:\t\t.res {}".format(var,dim_list[var]))
+    for var in dim_ptr_list:
+        print(var + ":\t\t.res 2")
 
-print()
-for idx, val in enumerate(str_list):
-    print("S" + str(idx) + ":\t\t.asciiz " + val)
-for var in var_id_list:
-    print(var + ":\t\t.res 4")
-for var in dim_list:
-    print("{}:\t\t.res {}".format(var,dim_list[var]))
-for var in dim_ptr_list:
-    print(var + ":\t\t.res 2")
+    print("BUFFER:")   # label defining start of runtime DIM buffer address
 
-print("BUFFER:")   # label defining start of runtime DIM buffer address
+    print('\n.include \"./includes/io.a65\"')
+    print('.include \"./includes/math.a65\"')
 
-print('\n.include \"./includes/io.a65\"')
-print('.include \"./includes/math.a65\"')
-
-sys.stdout = original_stdout    # Reset the standard output to its original value
-print(sys.argv[0] + ": compilation completed successfully!")
+    sys.stdout = original_stdout    # Reset the standard output to its original value
+    f.close()
+    print(sys.argv[0] + ": compilation completed successfully.")
+else:
+    print(sys.argv[0] + ": no compilation performed.")
 exit(0)
