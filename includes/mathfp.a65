@@ -1,0 +1,95 @@
+; 32-bit Fixed-Point (FP) Q16.16 Routines
+;
+
+; Push 16-bit INT in r0 to top of stack (SIL,SIH)
+;
+PUSH:
+		pha
+		phx
+		ldx FPSP
+		lda r0L
+		sta SIL,x
+		lda r0H
+		sta SIH,x
+		inx		; FPSP += 1
+		stx FPSP	; update FPSP
+		plx
+		pla
+		rts
+
+; Pull 16-bit INT from top of stack (SIL,SIH) to r0
+;
+PULL:
+		pha
+		phx
+		ldx FPSP	; load stack pointer
+		dex		; point to topmost element
+		lda SIL,x
+		sta r0L
+		lda SIH,x
+		sta r0H
+		stx FPSP	; update FPSP to new empty location
+		plx
+		pla
+		rts
+
+; Copies 16-bit INT from top of stack (SIL,SIH) to r0
+;
+PEEK:
+		pha
+		phx
+		ldx FPSP	; load stack pointer
+		lda SIL-1,x
+		sta r0L
+		lda SIH-1,x
+		sta r0H
+		plx
+		pla
+		rts
+
+; Duplicate top of stack
+; ( a -- a a )
+;
+DUP:
+		pha
+		phx
+		ldx FPSP
+		lda SIL-1,x	; copy SIL below
+		sta SIL,x	; ... to current
+		lda SIH-1,x	; copy SIH below
+		sta SIH,x	; ... to current
+		inx		; point to next empty location
+		stx FPSP
+		plx
+		pla
+		rts
+
+; Drop the top of stack
+; ( a -- )
+;
+DROP:
+		dec FPSP	; point to TOP "a" element, now empty
+		rts
+
+; Swap top two elements
+; ( a b -- b a )
+;
+SWAP:
+		pha
+		phx
+		ldx FPSP
+		lda SIL-2,x
+		sta FPTEMP
+		lda SIH-2,x
+		sta FPTEMP+1
+		lda SIL-1,x
+		sta SIL-2,x
+		lda SIH-1,x
+		sta SIH-2,x
+		lda FPTEMP
+		sta SIL-1,x
+		lda FPTEMP+1
+		sta SIH-1,x
+		plx
+		pla
+		rts

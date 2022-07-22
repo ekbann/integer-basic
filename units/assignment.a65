@@ -1,0 +1,27 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM ASSIGNMENT
+L15:		; REM VARIABLE 'A' BREAKS CA65
+L20:		PushInt 3
+			;PullVar A
+			jsr PULL
+			;MoveW r0, variable
+			;MoveB r0+0, A+0
+			lda r0+0
+			sta A+0					; Illegal addressing mode, Unexpected trailing garbage characters
+			;MoveB r0+1, A+1
+			lda r0+1
+			sta A+1					; Illegal addressing mode, Unexpected trailing garbage characters
+L30:		; REM V = 1 + (A + 2)
+L40:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L50:		rts
+
+S0:		.asciiz "the end"
+A:		.res 4						; Unexpected trailing garbage characters
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"

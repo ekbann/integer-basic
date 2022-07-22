@@ -3,6 +3,7 @@ UNIT: loop1
 
 UNIT: assignment
     variable "A" crashes ca65 assembler, conflict with cc65 macros
+    cc65 treats "A" as accumulator, need to rename variables as "var_A"
 
 + Need to print FPTEMP from 4 bytes to 8 bytes(?).
 + Check functions that uses FPTEMP now using 8 bytes.
