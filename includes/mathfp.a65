@@ -1,9 +1,9 @@
 ; 32-bit Fixed-Point (FP) Q16.16 Routines
 ;
 
-; Push 16-bit INT in r0 to top of stack (SIL,SIH)
+; Push 32-bit FP in r0(integer):r1(mantissa) to top of stack (SIH,SIL:SFH,SFL)
 ;
-PUSH:
+FPPUSH:
 		pha
 		phx
 		ldx FPSP
@@ -11,15 +11,19 @@ PUSH:
 		sta SIL,x
 		lda r0H
 		sta SIH,x
+		lda r1L
+		sta SFL,x
+		lda r1H
+		sta SFH,x
 		inx		; FPSP += 1
 		stx FPSP	; update FPSP
 		plx
 		pla
 		rts
 
-; Pull 16-bit INT from top of stack (SIL,SIH) to r0
+; Pull 32-bit FP from top of stack (SIH,SIL:SFH,SFL) to r0(integer):r1(mantissa)
 ;
-PULL:
+FPPULL:
 		pha
 		phx
 		ldx FPSP	; load stack pointer
@@ -28,14 +32,18 @@ PULL:
 		sta r0L
 		lda SIH,x
 		sta r0H
+		lda SFL,x
+		sta r1L
+		lda SFH,x
+		sta r1H
 		stx FPSP	; update FPSP to new empty location
 		plx
 		pla
 		rts
 
-; Copies 16-bit INT from top of stack (SIL,SIH) to r0
+; Copies 32-bit FP from top of stack (SIH,SIL:SFH,SFL) to r0(integer):r1(mantissa)
 ;
-PEEK:
+FPPEEK:
 		pha
 		phx
 		ldx FPSP	; load stack pointer
@@ -43,6 +51,10 @@ PEEK:
 		sta r0L
 		lda SIH-1,x
 		sta r0H
+		lda SFL-1,x
+		sta r1L
+		lda SFH-1,x
+		sta r1H
 		plx
 		pla
 		rts
@@ -50,7 +62,7 @@ PEEK:
 ; Duplicate top of stack
 ; ( a -- a a )
 ;
-DUP:
+FPDUP:
 		pha
 		phx
 		ldx FPSP
@@ -58,6 +70,10 @@ DUP:
 		sta SIL,x	; ... to current
 		lda SIH-1,x	; copy SIH below
 		sta SIH,x	; ... to current
+		lda SFL-1,x	; copy SFL below
+		sta SFL,x	; ... to current
+		lda SFH-1,x	; copy SFH below
+		sta SFH,x	; ... to current
 		inx		; point to next empty location
 		stx FPSP
 		plx
@@ -67,14 +83,14 @@ DUP:
 ; Drop the top of stack
 ; ( a -- )
 ;
-DROP:
+FPDROP:
 		dec FPSP	; point to TOP "a" element, now empty
 		rts
 
 ; Swap top two elements
 ; ( a b -- b a )
 ;
-SWAP:
+FPSWAP:
 		pha
 		phx
 		ldx FPSP
@@ -82,14 +98,26 @@ SWAP:
 		sta FPTEMP
 		lda SIH-2,x
 		sta FPTEMP+1
+		lda SFL-2,x
+		sta FPTEMP+2
+		lda SFH-2,x
+		sta FPTEMP+3
 		lda SIL-1,x
 		sta SIL-2,x
 		lda SIH-1,x
 		sta SIH-2,x
+		lda SFL-1,x
+		sta SFL-2,x
+		lda SFH-1,x
+		sta SFH-2,x
 		lda FPTEMP
 		sta SIL-1,x
 		lda FPTEMP+1
 		sta SIH-1,x
+		lda FPTEMP+2
+		sta SFL-1,x
+		lda FPTEMP+3
+		sta SFH-1,x
 		plx
 		pla
 		rts

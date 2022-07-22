@@ -1,0 +1,63 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+        ; test STACK
+        PrintNewline
+        PushInt $1
+        jsr STACK
+        PrintNewline
+        PushInt $2
+        jsr STACK
+        PrintNewline
+        PushInt $3
+        jsr STACK
+        PrintNewline
+        PushInt $4
+        jsr STACK
+        PrintNewline
+
+        PrintNewline
+        jsr FPSTACK
+
+        PrintNewline
+        ; test FPSTACK
+        StoreImm $0001, r0  ; 1
+        StoreImm $8000, r1  ; 0.5
+        jsr FPPUSH
+        jsr FPSTACK
+        PrintNewline
+
+        jsr FPSWAP
+        jsr FPDROP
+        jsr FPSTACK
+        PrintNewline
+
+        jsr FPDUP
+        jsr FPSTACK
+        PrintNewline
+
+        ; test: print fixed-point unsigned from top of stack
+        jsr PrFP32
+        StoreImm $0002, r0  ; 2
+        StoreImm $4000, r1  ; 0.250
+        jsr FPPUSH
+        jsr PrFP32
+        StoreImm $0003, r0  ; 3
+        StoreImm $2000, r1  ; 0.125
+        jsr FPPUSH
+        jsr PrFP32
+        StoreImm $0004, r0  ; 4
+        StoreImm $e000, r1  ; 0.500 + 0.250 + 0.125 = 0.8750
+        jsr FPPUSH
+        jsr PrFP32
+
+        ;jsr FPSTACK
+        ;PrintNewline
+
+        rts
+
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"

@@ -465,9 +465,6 @@ DIV2END:	plx
 			pla
 			rts
 
-; ***
-; *** WORK IN PROGRESS
-; ***
 ; Divide (unsigned) the top of the stack by 10
 ; ( a -- a/10 )
 ;

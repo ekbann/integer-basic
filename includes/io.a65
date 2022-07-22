@@ -245,6 +245,44 @@ PrDec16Tens:
             .word 10000
 pad:	    .byte 0			; default 0 = no padding
 
+; ***
+; *** BETA VERSION - WORKING
+; ***
+;-----------------------------------------------------------------
+; FUNCTION: Print 32-bit fixed-point Q16.16 number UNSIGNED
+; INPUT:    FP Q16.16 integer:mantissa Top Of Stack (TOS)
+;
+; OUTPUT:   unsigned INT '.' unsigned MANTISSA (always)
+;-----------------------------------------------------------------
+PrFP32:	; convert and print $0001:8000 into 1.5000
+		pha
+		phx
+		jsr PEEK		; copy integer part into r0
+		ldy #0
+		jsr PrDec16
+		lda #'.'		; print decimal point
+		jsr CHROUT		
+		jsr FPPEEK		; copy integer:mantissa to r0:r1
+		lda r1L			; copy the mantissa part into r0
+		sta r0L
+		lda r1H
+		sta r0H
+		jsr PUSH		; PUSH mantissa as an integer
+        StoreImm $2710, r0      ; decimal 10,000; largest that fits in 16-bit
+        jsr PUSH
+        jsr UMUL			; (mantissa * 10000) / (2^16) <-- just the MSW of FP
+        lda FPTEMP+2		; MSW:LSW = load MSW into current SIH/SIL
+        sta r0L			; replaces the LSW that UMUL provides
+        lda FPTEMP+3
+        sta r0H	
+		ldy #0
+        jsr PrDec16			; mantissa is always UNSIGNED
+        PrintNewline
+		jsr DROP		; drop the UMUL result
+		plx
+		pla
+		rts
+
 ; Dump all elements of the INT stack (16-bit)
 ;
 STACK:
@@ -263,6 +301,35 @@ STACK0:
 		PrintNewline
 		jmp STACK0
 STACK1:
+		plx
+		pla
+		rts
+
+; Dump all elements of the FP (Q16.16) stack (32-bit) as aaaa.bbbb
+;
+FPSTACK:
+		pha
+		phx
+		ldx FPSP
+FPSTACK0:
+		cpx #0
+		beq FPSTACK1
+		dex
+		lda SIL,x
+		sta r0L
+		lda SIH,x
+		sta r0H
+		jsr PrHex16
+		lda #':'
+		jsr CHROUT
+		lda SFL,x
+		sta r0L
+		lda SFH,x
+		sta r0H
+		jsr PrHex16
+		PrintNewline
+		jmp FPSTACK0
+FPSTACK1:
 		plx
 		pla
 		rts
