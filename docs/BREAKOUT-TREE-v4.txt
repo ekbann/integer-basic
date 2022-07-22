@@ -1,0 +1,799 @@
+start
+
+5 TEXT: CALL -936: VTAB 4: TAB 10: PRINT "*** BREAKOUT GAME ***": PRINT
+  line
+    5
+    text
+    call
+      neg	936
+    vtab	4
+    tab	10
+    print	"*** BREAKOUT GAME ***"
+    print
+
+7 PRINT "  OBJECT IS TO DESTROY ALL BRICKS WITH 5 BALLS": FOR N=1 TO 7000: NEXT N
+  line
+    7
+    print	"  OBJECT IS TO DESTROY ALL BRICKS WITH 5 BALLS"
+    for
+      N
+      1
+      7000
+    next	N
+
+10 DIM A$(20),B$(20): GR: PRINT: INPUT "HI, WHAT'S YOUR NAME? ",A$:A=1:B=13:C=9:D=6:E=15: PRINT "STANDARD COLORS, "; A$;
+  line
+    10
+    dim
+      A$
+      20
+      B$
+      20
+    gr
+    print
+    input
+      "HI, WHAT'S YOUR NAME? "
+      A$
+    assignment
+      A
+      1
+    assignment
+      B
+      13
+    assignment
+      C
+      9
+    assignment
+      D
+      6
+    assignment
+      E
+      15
+    print
+      "STANDARD COLORS, "
+      A$
+
+20 INPUT "? ",B$: IF B$#"N" AND B$#"NO" THEN 30: FOR I=0 TO 39: COLOR=I/2*(I<32): VLIN 0,39 AT I
+  line
+    20
+    input
+      "? "
+      B$
+    if
+      and
+        not_equal
+          B$
+          "N"
+        not_equal
+          B$
+          "NO"
+      30
+    for
+      I
+      0
+      39
+    color
+      div
+        I
+        mul
+          2
+          less_than
+            I
+            32
+    vlin
+      0
+      39
+      I
+
+25 NEXT I: POKE 34,20: PRINT: PRINT: PRINT: FOR I=0 TO 15: VTAB 21+I MOD 2: TAB I+I+1: PRINT I;: NEXT I: POKE 34,22: VTAB 24: PRINT: PRINT "BACKGROUND";
+  line
+    25
+    next	I
+    poke
+      34
+      20
+    print
+    print
+    print
+    for
+      I
+      0
+      15
+    vtab
+      add
+        21
+        mod
+          I
+          2
+    tab
+      add
+        I
+        add
+          I
+          1
+    print	I
+    next	I
+    poke
+      34
+      22
+    vtab	24
+    print
+    print	"BACKGROUND"
+
+27 A=16:GOSUB 100: A=E: PRINT "EVEN BRICK";: GOSUB 100: B=E: PRINT "ODD BRICK";: GOSUB 100: C=E: PRINT "PADDLE";: GOSUB 100: D=E : PRINT "BALL";: GOSUB 100
+  line
+    27
+    assignment
+      A
+      16
+    gosub	100
+    assignment
+      A
+      E
+    print	"EVEN BRICK"
+    gosub	100
+    assignment
+      B
+      E
+    print	"ODD BRICK"
+    gosub	100
+    assignment
+      C
+      E
+    print	"PADDLE"
+    gosub	100
+    assignment
+      D
+      E
+    print	"BALL"
+    gosub	100
+
+30 POKE34,20:COLOR=A:FORI=0TO39:VLIN0,39ATI:NEXTI:FOR I=20TO34STEP2:TAB I+1:PRINT I/2-9;:COLOR=B:VLIN 0,39 AT I:COLOR=C:FOR J=I MOD 4 TO 39 STEP4
+  line
+    30
+    poke
+      34
+      20
+    color	A
+    for
+      I
+      0
+      39
+    vlin
+      0
+      39
+      I
+    next	I
+    for
+      I
+      20
+      34
+      2
+    tab
+      add
+        I
+        1
+    print
+      sub
+        div
+          I
+          2
+        9
+    color	B
+    vlin
+      0
+      39
+      I
+    color	C
+    for
+      J
+      mod
+        I
+        4
+      39
+      4
+
+35 VLIN J,J+1 AT I: NEXT J,I: TAB 5: PRINT "SCORE = 0": PRINT: PRINT: POKE 34,21: S=0: P=0: L=0: X=0: Y=0
+  line
+    35
+    vlin
+      J
+      add
+        J
+        1
+      I
+    next
+      J
+      I
+    tab	5
+    print	"SCORE = 0"
+    print
+    print
+    poke
+      34
+      21
+    assignment
+      S
+      0
+    assignment
+      P
+      0
+    assignment
+      L
+      0
+    assignment
+      X
+      0
+    assignment
+      Y
+      0
+
+40 COLOR=A:PLOTX,Y/3:X=19:Y=RND(120):V=-1:W=RND(5)-2:L=L+1:IFL>5THEN140:TAB6:PRINT"BALL #";L:PRINT:FORI=1TO100:GOSUB200:NEXTI:M=1:N=0
+  line
+    40
+    color	A
+    plot
+      X
+      div
+        Y
+        3
+    assignment
+      X
+      19
+    assignment
+      Y
+      rnd	120
+    assignment
+      V
+      neg	1
+    assignment
+      W
+      sub
+        rnd	5
+        2
+    assignment
+      L
+      add
+        L
+        1
+    if
+      greater_than
+        L
+        5
+      140
+    tab	6
+    print
+      "BALL #"
+      L
+    print
+    for
+      I
+      1
+      100
+    gosub	200
+    next	I
+    assignment
+      M
+      1
+    assignment
+      N
+      0
+
+50 J=Y+W: IF J>=0 AND J<120 THEN 60: W=-W: J=Y: FOR I=1 TO 6: K=PEEK(-16336): NEXT I
+  line
+    50
+    assignment
+      J
+      add
+        Y
+        W
+    if
+      and
+        greater_equal
+          J
+          0
+        less_than
+          J
+          120
+      60
+    assignment
+      W
+      neg	W
+    assignment
+      J
+      Y
+    for
+      I
+      1
+      6
+    assignment
+      K
+      peek
+        neg	16336
+    next	I
+
+55 IF PEEK(-16287)>127 THEN SW=1-SW
+  line
+    55
+    if
+      greater_than
+        peek
+          neg	16287
+        127
+      assignment
+        SW
+        sub
+          1
+          SW
+
+60 I=X+V: IF I<0 THEN 400: GOSUB 200: COLOR=A: K=J/3: IF I>39 THEN 70: IF SCRN(I,K)=A THEN 90: IF I THEN 120: N=N+1: V=(N>9)+1: W=(K-P)*2-5:M=1
+  line
+    60
+    assignment
+      I
+      add
+        X
+        V
+    if
+      less_than
+        I
+        0
+      400
+    gosub	200
+    color	A
+    assignment
+      K
+      div
+        J
+        3
+    if
+      greater_than
+        I
+        39
+      70
+    if
+      equal
+        value
+          I
+          K
+        A
+      90
+    if
+      I
+      120
+    assignment
+      N
+      add
+        N
+        1
+    assignment
+      V
+      add
+        greater_than
+          N
+          9
+        1
+    assignment
+      W
+      sub
+        mul
+          sub
+            K
+            P
+          2
+        5
+    assignment
+      M
+      1
+
+65 Z = PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336): GOTO 90
+  line
+    65
+    assignment
+      Z
+      sub
+        peek
+          neg	16336
+        sub
+          peek
+            neg	16336
+          sub
+            peek
+              neg	16336
+            sub
+              peek
+                neg	16336
+              sub
+                peek
+                  neg	16336
+                sub
+                  peek
+                    neg	16336
+                  peek
+                    neg	16336
+    goto	90
+
+70 FOR I=1 TO 6: M=PEEK(-16336): NEXT I: I=X: M=0
+  line
+    70
+    for
+      I
+      1
+      6
+    assignment
+      M
+      peek
+        neg	16336
+    next	I
+    assignment
+      I
+      X
+    assignment
+      M
+      0
+
+80 V=-V
+  line
+    80
+    assignment
+      V
+      neg	V
+
+90 PLOT X,Y/3: COLOR=E: PLOT I,K: X=I: Y=J: GOTO 50
+  line
+    90
+    plot
+      X
+      div
+        Y
+        3
+    color	E
+    plot
+      I
+      K
+    assignment
+      X
+      I
+    assignment
+      Y
+      J
+    goto	50
+
+99 PRINT "INVALID.  REENTER";
+  line
+    99
+    print	"INVALID.  REENTER"
+
+100 INPUT " COLOR (0 TO 15)",E: IF E<0 THEN 99 : IF E>15 THEN 99: IF E=A THEN 99 : RETURN
+  line
+    100
+    input
+      " COLOR (0 TO 15)"
+      E
+    if
+      less_than
+        E
+        0
+      99
+    if
+      greater_than
+        E
+        15
+      99
+    if
+      equal
+        E
+        A
+      99
+    return
+
+120 IF M THEN V=ABS(V): VLIN K/2*2,K/2*2+1 AT I: S=S+I/2-9: VTAB 21: TAB 13: PRINT S
+  line
+    120
+    if
+      M
+      assignment
+        V
+        abs	V
+    vlin
+      div
+        K
+        mul
+          2
+          2
+      add
+        div
+          K
+          mul
+            2
+            2
+        1
+      I
+    assignment
+      S
+      add
+        S
+        sub
+          div
+            I
+            2
+          9
+    vtab	21
+    tab	13
+    print	S
+
+123 Q = PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)-PEEK(-16336)
+  line
+    123
+    assignment
+      Q
+      sub
+        peek
+          neg	16336
+        sub
+          peek
+            neg	16336
+          sub
+            peek
+              neg	16336
+            sub
+              peek
+                neg	16336
+              sub
+                peek
+                  neg	16336
+                sub
+                  peek
+                    neg	16336
+                  sub
+                    peek
+                      neg	16336
+                    sub
+                      peek
+                        neg	16336
+                      sub
+                        peek
+                          neg	16336
+                        peek
+                          neg	16336
+
+124 IF S<720 THEN 80
+  line
+    124
+    if
+      less_than
+        S
+        720
+      80
+
+130 PRINT "CONGRATULATIONS, YOU WIN.": GOTO 150
+  line
+    130
+    print	"CONGRATULATIONS, YOU WIN."
+    goto	150
+
+140 PRINT "YOUR SCORE OF ";S;" IS ";: GOTO 141+S/100
+  line
+    140
+    print
+      "YOUR SCORE OF "
+      S
+      " IS "
+    goto
+      add
+        141
+        div
+          S
+          100
+
+141 PRINT "TERRIBLE!": GOTO 150
+  line
+    141
+    print	"TERRIBLE!"
+    goto	150
+
+142 PRINT "LOUSY.": GOTO 150
+  line
+    142
+    print	"LOUSY."
+    goto	150
+
+143 PRINT "POOR.": GOTO 150
+  line
+    143
+    print	"POOR."
+    goto	150
+
+144 PRINT "FAIR.": GOTO 150
+  line
+    144
+    print	"FAIR."
+    goto	150
+
+145 PRINT "GOOD.": GOTO 150
+  line
+    145
+    print	"GOOD."
+    goto	150
+
+146 PRINT "VERY GOOD.": GOTO 150
+  line
+    146
+    print	"VERY GOOD."
+    goto	150
+
+147 PRINT "EXCELLENT.": GOTO 150
+  line
+    147
+    print	"EXCELLENT."
+    goto	150
+
+148 PRINT "NEARLY PERFECT."
+  line
+    148
+    print	"NEARLY PERFECT."
+
+150 PRINT "SAME COLORS";: GOTO 20
+  line
+    150
+    print	"SAME COLORS"
+    goto	20
+
+200 IF SW THEN 220: Q=(PDL(0)-5)/6
+  line
+    200
+    if
+      SW
+      220
+    assignment
+      Q
+      div
+        sub
+          pdl	0
+          5
+        6
+
+205 IF Q>=34 THEN Q=34: COLOR=D: VLIN Q,Q+5 AT 0: COLOR=A: IF P>=Q THEN 210: IF Q THEN VLIN 0,Q-1 AT 0: P=Q: RETURN
+  line
+    205
+    if
+      greater_equal
+        Q
+        34
+      assignment
+        Q
+        34
+    color	D
+    vlin
+      Q
+      add
+        Q
+        5
+      0
+    color	A
+    if
+      greater_equal
+        P
+        Q
+      210
+    if
+      Q
+      vlin
+        0
+        sub
+          Q
+          1
+        0
+    assignment
+      P
+      Q
+    return
+
+210 IF P=Q THEN RETURN: IF Q#34 THEN VLIN Q+6,39 AT 0: P=Q: RETURN
+  line
+    210
+    if
+      equal
+        P
+        Q
+      return
+    if
+      not_equal
+        Q
+        34
+      vlin
+        add
+          Q
+          6
+        39
+        0
+    assignment
+      P
+      Q
+    return
+
+220 Q=(Y-5)/3+RND(3)*SGN(W)*(X<10 AND V<0): IF Q<0 THEN Q=0: GOTO 205
+  line
+    220
+    assignment
+      Q
+      add
+        div
+          sub
+            Y
+            5
+          3
+        mul
+          rnd	3
+          mul
+            sgn	W
+            and
+              less_than
+                X
+                10
+              less_than
+                V
+                0
+    if
+      less_than
+        Q
+        0
+      assignment
+        Q
+        0
+    goto	205
+
+400 FOR I=1 TO 80: Q=PEEK(-16336): NEXT I: GOTO 40
+  line
+    400
+    for
+      I
+      1
+      80
+    assignment
+      Q
+      peek
+        neg	16336
+    next	I
+    goto	40
+
+990 VLIN K/2*2,K/2*2+1 AT I
+  line
+    990
+    vlin
+      div
+        K
+        mul
+          2
+          2
+      add
+        div
+          K
+          mul
+            2
+            2
+        1
+      I
+
+999 GR: FOR I=0 TO 39: COLOR=I/2*(I<32): VLIN 0,39 AT I: NEXT I
+  line
+    999
+    gr
+    for
+      I
+      0
+      39
+    color
+      div
+        I
+        mul
+          2
+          less_than
+            I
+            32
+    vlin
+      0
+      39
+      I
+    next	I
+

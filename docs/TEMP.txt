@@ -1,0 +1,12 @@
+              | "PRINT" (expression [(("," | ";") expression)*] ("," | ";")?)? -> print
+
+===
+              | "PRINT" print_list -> print
+
+    ?print_list: print_list expression "," -> tab
+               | print_list expression ";" -> notab
+               | print_list expression -> cr
+               |
+
+===
+

@@ -1,0 +1,439 @@
+ 10 ORG $E000
+ 20 LST OFF
+ 30 XC OFF ;6502 only
+ 40 EXP ON ;print only macro call
+ 50 LSTDO OFF ;don't list conditional code
+ 60 TR OFF ;don't truncate listing to 3 bytes
+ 70 CYC OFF ;don't print cycle times
+ 80 USE MACROS
+ 90 LST ON
+ 100 *************************************************
+ 110 * *
+ 120 * INTEGER BASIC *
+ 130 * *
+ 140 * WOZ *
+ 150 * *
+ 160 *************************************************
+ 170 * *
+ 180 * "That BASIC, which we shipped with the first *
+ 190 * Apple II's, was never assembled -- ever. *
+ 200 * There was one handwritten copy, all *
+ 210 * handwritten, all hand assembled." *
+ 220 * *
+ 230 * Steve Wozniak *
+ 240 * Call-A.P.P.L.E., October 1986 *
+ 250 * *
+ 260 *************************************************
+ 270
+ 280 * Computer Apple II family
+ 290 * O/S none needed, but usually DOS 3.3
+ 300 * Language 6502 assembly -- Merlin assembler
+ 310 * Disassembled by:
+ 320 * Paul R. Santa-Maria (paulrsm@buckeyeexpress.com)
+ 330 * P.O. Box 924
+ 340 * Monroe MI 48161
+ 350 * Revised 1 May 2000
+ 360 * Reference "What's Where in the Apple"; William
+F. Luebbert
+ 370 * Peeking at Call-A.P.P.L.E. Vol 2 1979;
+pp44-61
+ 380
+ 390 *************************************************
+ 400
+ 410 * zero-page
+ 420
+ 430 LOMEM = $004A ;ptr: start of vars
+ 440 HIMEM = $004C ;ptr: end of BASIC program
+ 450 NOUNSTKL = $0050 ;noun stack low bytes (80-
+87)
+ 460 SYNSTKH = $0058 ;syntax stack high byte
+ 470 NOUNSTKH = $0078 ;noun stack high bytes (78-
+97)
+ 480 SYNSTKL = $0080 ;syntax stack low bytes (80-
+9F)
+ 490 NOUNSTKC = $00A0 ;noun stack counter (A0-
+BF)
+ 500 TXTNDXSTK = $00A8 ;text index stack (A8-C7)
+ 510 TXTNDX = $00C8 ;text index val (OUTVAL)
+ 520 LEADBL = $00C9 ;leading blanks index (YTEMP)
+ 530 PP = $00CA ;ptr: start of program
+ 540 PV = $00CC ;ptr: end of vars
+ 550 ACC = $00CE ;word: main accumulator
+ 560 SRCH = $00D0 ;ptr to search var tbl
+ 570 TOKNDXSTK = $00D1 ;token index stack (D1-
+F0)
+ 580 SRCH2 = $00D2 ;second var search ptr
+ 590 IFFLAG = $00D4 ;IF/THEN fail flag
+ 600 CRFLAG = $00D5 ;carriage return flag
+ 610 VERBNOW = $00D6 ;verb currently in use
+ 620 PRFLAG = $00D7 ;print it now flag
+ 630 XSAVE = $00D8 ;temp Xreg save
+ 640 RUNFLAG = $00D9 ;run mode flag
+ 650 AUX = $00DA ;word: aux ctr
+ 660 PR = $00DC ;word: current line value
+ 670 *PN = $00DE ;ptr to current noun
+ 680 PX = $00E0 ;ptr to current verb
+ 690 P1 = $00E2 ;aux ptr 1 (delete line ptr)
+ 700 P2 = $00E4 ;aux ptr 2 ...
+ 710 * (line num adr) (next line num) (general flag)
+ 720 P3 = $00E6 ;aux ptr 3 (next ptr)
+ 730 TOKNDX = $00F1 ;token index val
+ 740 PCON = $00F2 ;continue ptr (PRDEC low/high)
+ 750 AUTOINC = $00F4 ;auto line increment
+ 760 AUTOLN = $00F6 ;current auto line
+ 770 AUTOFLAG = $00F8 ;auto line mode flag ($FF =
+on)
+ 780 CHAR = $00F9 ;current char
+ 790 LEADZR = $00FA ;leading zeros index
+($00,$A0,$B0)
+ 800 FORNDX = $00FB ;FOR-NEXT loop index
+ 810 GOSUBNDX = $00FC ;GOSUB index
+ 820 SYNSTKDX = $00FD ;syntax stack index val
+ 830 SYNPAG = $00FE ;ptr: syntax page
+ 840 *if SYNPAG+1 <> 0 then error condition exists
+ 850
+ 860 STACK = $0100 ;6502 STACK
+ 870
+ 880 * GOSUB/RETURN usage
+ 890
+ 900 STK_00 = STACK+$00
+ 910 STK_10 = STACK+$10
+ 920 STK_20 = STACK+$20
+ 930 STK_30 = STACK+$30
+ 940
+ 950 * FOR/NEXT/STEP usage
+ 960
+ 970 STK_40 = STACK+$40
+ 980 STK_50 = STACK+$50
+ 990 STK_60 = STACK+$60
+ 1000 STK_70 = STACK+$70
+ 1010 STK_80 = STACK+$80
+ 1020 STK_90 = STACK+$90
+ 1030 STK_A0 = STACK+$A0
+ 1040 STK_B0 = STACK+$B0
+ 1050 STK_C0 = STACK+$C0
+ 1060 STK_D0 = STACK+$D0
+ 1070
+ 1080 * I/O addresses
+ 1090
+ 1100 KBD = $C000
+ 1110 KBDSTRB = $C010
+ 1120
+ 1130 * Monitor zero page and low memory
+ 1140
+ 1150 WNDWDTH = $0021
+ 1160 CH = $0024
+ 1170 CV = $0025
+ 1180 GBAS = $0026
+ 1190 H2 = $002C
+ 1200 V2 = $002D
+ 1210 A1 = $003C
+ 1220 A2 = $003E
+ 1230 PROMPT = $0033
+ 1240 RNDL = $004E
+ 1250 RNDH = $004F
+ 1260
+ 1270 IN = $0200
+ 1280
+ 1290 * Monitor routines
+ 1300
+ 1310 PLOT = $F800
+ 1320 HLINE = $F819
+ 1330 VLINE = $F828
+ 1340 GBASCALC = $F847
+ 1350 SETCOL = $F864
+ 1360 PREAD = $FB1E
+ 1370 SETTXT = $FB39
+ 1380 SETGR = $FB40
+ 1390 VTAB = $FC22
+ 1400 WRITE = $FECD
+ 1410 WRITE0 = $FECF
+ 1420 READ = $FEFD
+ 1430 NXTCHAR = $FD75
+ 1440 CROUT = $FD8E
+ 1450 COUT = $FDED
+ 1460 INPORT = $FE8B
+ 1470 OUTPORT = $FE95
+ 1480 BELL = $FF3A
+ 1490
+ 1500 * ASCII (excess $8000 for xref listing)
+ 1510
+ 1520 ETX = $8003 ;CTRL-C
+ 1530 LF = $800A
+ 1540 CR = $800D
+ 1550 BLANK = $8020
+ 1560 DQT = $8022
+ 1570 SQT = $8027
+ 1580
+ 1590 **************************************************
+ 1600 * ;Z = unreferenced area
+ 1610 * ;V = referenced in verb table
+ 1620 * ;VO = referenced in verb table only
+ 1630 * ;solo = one reference only (could be in-line)
+ 1640 
+...
+ 5640 * tkn $14 *
+ 5650 * num math op
+ 5660 * A = 27 * 2
+ 5670
+ 5680 MULT ;V
+ 5690 JSR HE254
+ 5700 *!LOOP
+ 5710 ASL ACC
+ 5720 ROL ACC+1 ;add partial product if C flag set
+ 5730 *! IF <CS>
+ 5740 ADDW P3;AUX;P3
+ 5750 *! ENDIF
+ 5760 DEY
+ 5770 BEQ HE244 ;=>EXIT LOOP
+ 5780 ASL P3
+ 5790 ROL P3+1
+ 5800 *!UNTIL <MI>
+ 5810 JMP HE77E ;#ErrMsg00 ;">32767" 
+ 5820 *>
+ 5830
+ 5840 HE244
+ 5850 LDA P3
+ 5860 JSR HE708
+ 5870 LDA P3+1
+ 5880 STA NOUNSTKC,X
+ 5890 ASL P2+1
+ 5900 BCC HE279 ;=>RTS
+ 5910 JMP NEGATE
+ 5920 *>
+ 5930
+ 5940 HE254
+ 5950 LDA #$55
+ 5960 STA P2+1
+ 5970 JSR HE25B
+ 5980 HE25B
+ 5990 MOVW ACC;AUX
+ 6000 JSR GET16BIT
+ 6010 STY P3 ;P3 := 0
+ 6020 STY P3+1
+ 6030 LDA ACC+1
+ 6040 *!IF <MI>
+ 6050 DEX
+ 6060 ASL P2+1
+ 6070 JSR NEGATE
+ 6080 JSR GET16BIT
+ 6090 *!ENDIF
+ 6100 LDY #$10
+ 6110 HE279
+ 6120 RTS
+ 6130 **
+ 6140
+ 6150 * tkn $1F MOD
+ 6160 * num op 
+ 6170 * IF X MOD 13 THEN END
+ 6180
+ 6190 MOD ;V
+ 6200 JSR HEE6C ;divide routine 
+ 6210 BEQ HE244 ;=>always
+ 6220
+ 6230 DB $FF ;Z
+ 6240
+ 6250 HE280 ;solo
+ 6260 INC PROMPT ;change '>' to '?'
+ 6270 LDY #0
+ 6280 JSR GETCMD
+ 6290 DEC PROMPT ;change '?' to '>'
+ 6300 RTS 
+...
+ 13970 HE708
+ 13980 STY NOUNSTKH-1,X
+ 13990 HE70A
+ 14000 DEX
+ 14010 *!IF <PL>
+ 14020 STA NOUNSTKL,X
+ 14030 RTS
+ 14040 *!ENDIF
+ 14050
+ 14060 LDY #$66 ;"PPED AT" ;Z?
+ 14070 HE712
+ 14080 JMP ERRMESS
+ 14090 *>
+ 14100
+ 14110 *---------
+ 14120 * Output Yreg := 0
+ 14130
+ 14140 GET16BIT ;get a 16 bit value
+ 14150 LDY #0
+ 14160 LDA NOUNSTKL,X
+ 14170 STA ACC
+ 14180 LDA NOUNSTKC,X
+ 14190 STA ACC+1
+ 14200 LDA NOUNSTKH,X
+ 14210 *!IF <NE>
+ 14220 STA ACC+1
+ 14230 LDA (ACC),Y ;ACC := (ACC),Y
+ 14240 PHA ;save low byte
+ 14250 INY ;Yreg := 1
+ 14260 LDA (ACC),Y
+ 14270 STA ACC+1
+ 14280 PLA ;restore low byte
+ 14290 STA ACC
+ 14300 DEY ;Yreg := 0
+ 14310 *!ENDIF
+ 14320 INX
+ 14330 RTS
+ 14340 **
+ 14350 
+ 14360 * tkn $16 =
+ 14370 * num var logic op
+ 14380 * IF X = 13 THEN END
+ 14390
+ 14400 HE733 ;VO
+ 14410 JSR HE74A
+ 14420 
+ 14430 * tkn $37 NOT
+ 14440 * numeric
+ 14450 * IF NOT X THEN END
+ 14460
+ 14470 NOT ;V
+ 14480 JSR GET16BIT
+ 14490 TYA ;Areg := 0
+ 14500 JSR HE708
+ 14510 STA NOUNSTKC,X
+ 14520 CMP ACC
+ 14530 *!IF <EQ>
+ 14540 CMP ACC+1
+ 14550 *! IF <EQ>
+ 14560 INC NOUNSTKL,X
+ 14570 *! ENDIF
+ 14580 *!ENDIF
+ 14590 RTS
+ 14600 **
+ 14610
+ 14620 * tkn $17 #
+ 14630 * num var logic op
+ 14640 * IF X # 13 THEN END
+ 14650
+ 14660 * tkn $1B <>
+ 14670 * num var logic op
+ 14680 * IF X <> 13 THEN END
+ 14690
+ 14700 HE74A ;V
+ 14710 JSR SUBTRACT
+ 14720 JSR SGN
+ 14730
+ 14740 * tkn $31 ABS
+ 14750
+ 14760 ABS ;VO
+ 14770 JSR GET16BIT
+ 14780 BIT ACC+1
+ 14790 BMI HE772 ;=>
+ 14800 HE757 ;solo
+ 14810 DEX
+ 14820 HE758
+ 14830 RTS
+ 14840 **
+ 14850
+ 14860 * tkn $30 SGN
+ 14870
+ 14880 SGN ;V
+ 14890 JSR GET16BIT
+ 14900 LDA ACC+1 ;is ACC zero?
+ 14910 *!IF <EQ>
+ 14920 LDA ACC
+ 14930 BEQ HE757 ;=>yes
+ 14940 *!ENDIF
+ 14950 LDA #$FF
+ 14960 JSR HE708
+ 14970 STA NOUNSTKC,X
+ 14980 BIT ACC+1
+ 14990 BMI HE758 ;=>RTS
+ 15000
+ 15010 * tkn $36 -
+ 15020 * unary sign of number
+ 15030 * X = -5
+ 15040
+ 15050 NEGATE ;V
+ 15060 JSR GET16BIT
+ 15070 HE772
+ 15080 TYA ;Areg := 0
+ 15090 SEC
+ 15100 SBC ACC
+ 15110 JSR HE708
+ 15120 TYA
+ 15130 SBC ACC+1
+ 15140 BVC HE7A1 ;=>
+ 15150 HE77E
+ 15160 LDY #ErrMsg00 ;">32767"
+ 15170 BPL HE712 ;=>always
+ 15180
+ 15190 * tkn $13 -
+ 15200 * num op
+ 15210 * X=27-2
+ 15220
+ 15230 SUBTRACT ;V
+ 15240 JSR NEGATE ;negate, then add
+ 15250
+ 15260 * tkn $12 +
+ 15270 * num op
+ 15280 * X=27+2
+ 15290
+ 15300 ADDITION ;VO
+ 15310 JSR GET16BIT
+ 15320 MOVW ACC;AUX
+ 15330 JSR GET16BIT
+ 15340 HE793
+ 15350 CLC
+ 15360 LDA ACC
+ 15370 ADC AUX
+ 15380 JSR HE708
+ 15390 LDA ACC+1
+ 15400 ADC AUX+1
+ 15410 BVS HE77E ;=> #ErrMsg00 ;">32767" 
+ 15420 HE7A1
+ 15430 STA NOUNSTKC,X
+ 15440
+ 15450 * tkn $35 +
+ 15460 * unary sign of number
+ 15470 * X = +5
+ 15480
+ 15490 POSITIVE ;VO
+ 15500 RTS
+ 15510 **
+ 15520 
+...
+ 24730 * divide routine
+ 24740
+ 24750 HEE6C
+ 24760 JSR HE254
+ 24770 LDA AUX ;is AUX zero?
+ 24780 *!IF <EQ>
+ 24790 LDA AUX+1
+ 24800 *! IF <EQ>
+ 24810 JMP HE77E ;yes, ">32767" error
+ 24820 *! ENDIF
+ 24830 *!ENDIF
+ 24840 *!LOOP
+ 24850 ASL ACC
+ 24860 ROL ACC+1
+ 24870 ROL P3
+ 24880 ROL P3+1
+ 24890 CMPW P3;AUX
+ 24900 *! IF <HS>
+ 24910 STA P3+1 ;P3 := P3-AUX
+ 24920 LDA P3
+ 24930 SBC AUX
+ 24940 STA P3
+ 24950 INC ACC
+ 24960 *! ENDIF
+ 24970 DEY
+ 24980 *!UNTIL <EQ>
+ 24990 RTS
+ 25000 **
+ 25010
+ 25020 DB $FF,$FF,$FF,$FF,$FF,$FF ;Z 
+...
+ 26180 * tkn $15 /
+ 26190 * num op. uses $38 (
+ 26200 * A = 27 / 2
+ 26210
+ 26220 DIVIDE ;VO
+ 26230 JSR HEE6C 	divide routine
+ 26240 MOVW ACC;P3
+ 26250 JMP HE244
+ 26260 *> 

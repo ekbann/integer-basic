@@ -1,0 +1,496 @@
+; Constants
+;
+FPSTACKSIZE .equ 8  ; Fixed-point stack size
+
+; Fixed-point library
+;
+FPSP   .ds 2
+FPTEMP .ds 8
+SFL    .ds FPSTACKSIZE*2
+SFH    .ds FPSTACKSIZE*2
+SIL    .ds FPSTACKSIZE*2
+SIH    .ds FPSTACKSIZE*2
+
+; RAM variables and buffers
+
+; Mandelbrot application
+;
+FPVARS:
+VREAL .ds 8
+VIMAG .ds 8
+VMAG  .ds 8
+VASP  .ds 8
+
+; Fixed-point routines
+
+; Add top two numbers on stack
+; ( a b -- a+b )
+;
+FPADD
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    CLC
+    LDA SFL+2,X
+    ADC SFL,X
+    STA SFL+2,X
+    LDA SFH+2,X
+    ADC SFH,X
+    STA SFH+2,X
+    LDA SIL+2,X
+    ADC SIL,X
+    STA SIL+2,X
+    LDA SIH+2,X
+    ADC SIH,X
+    STA SIH+2,X
+    INX
+    INX
+    STX FPSP
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Duplicate top of stack
+; ( a -- a a )
+;
+FPDUP
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    DEX
+    DEX
+    LDA SFL+2,X
+    STA SFL,X
+    LDA SFH+2,X
+    STA SFH,X
+    LDA SIL+2,X
+    STA SIL,X
+    LDA SIH+2,X
+    STA SIH,X
+    STX FPSP
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Push the value of the FP variable (whose index is in A) onto the stack
+; ( -- a )
+;
+FPFETCH
+    STA FPTEMP
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    LDX FPSP
+    LDY FPTEMP
+    DEX
+    DEX
+    LDA FPVARS,Y
+    STA SFL,X
+    LDA FPVARS+2,Y
+    STA SFH,X
+    LDA FPVARS+4,Y
+    STA SIL,X
+    LDA FPVARS+6,Y
+    STA SIH,X
+    STX FPSP
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Multiply top of stack by ten
+; ( a -- a*10 )
+;
+FPMUL10
+    JSR FPDUP
+    JSR FPMUL2
+    JSR FPMUL2
+    JSR FPADD
+    JMP FPMUL2
+
+; Multiply top of stack by two
+; ( a -- a*2 )
+;
+FPMUL2
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    ASL SFL,X
+    ROL SFH,X
+    ROL SIL,X
+    ROL SIH,X
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Multiply top of stack by 65536
+; ( a -- a*65536 )
+;
+FPMUL65536
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    LDA SIL,X
+    STA SIH,X
+    LDA SFH,X
+    STA SIL,X
+    LDA SFL,X
+    STA SFH,X
+    LDA #0
+    STA SFL,X
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Negate top of stack
+; ( a -- -a )
+;
+FPNEG
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    SEC
+    LDA #0
+    SBC SFL,X
+    STA SFL,X
+    LDA #0
+    SBC SFH,X
+    STA SFH,X
+    LDA #0
+    SBC SIL,X
+    STA SIL,X
+    LDA #0
+    SBC SIH,X
+    STA SIH,X
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Pull low 16-bit of integer portion of top of stack and return in A
+; ( a -- )
+;
+FPPULL
+    STX FPTEMP
+    LDX FPSP
+    LDA SIL,X
+    INX
+    INX
+    STX FPSP
+    LDX FPTEMP
+    RTS
+
+; Push (unsigned) integer in A onto the stack
+; ( -- a )
+;
+FPPUSH
+    PHA
+    STX FPTEMP
+    LDX FPSP
+    DEX
+    DEX
+    STA SIL,X
+    LDA #0
+    STA SFL,X
+    STA SFH,X
+    STA SIH,X
+    STX FPSP
+    LDX FPTEMP
+    PLA
+    RTS
+
+; Raise 10 to the power of A
+; ( -- 10^A )
+;
+FPPWR10
+    PHA
+    LDA #1
+    JSR FPPUSH
+    PLA
+    PHA
+    BEQ FP2
+FP1 JSR FPMUL10
+    SEC
+    SBC #1
+    BNE FP1
+FP2 PLA
+    RTS
+
+; If the carry is set, round the top of the stack up
+; ( a -- a+carry*2^-32 )
+;
+FPROUNDUP
+    BCC FR2
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    INC SFL,X
+    BNE FR1
+    INC SFH,X
+    BNE FR1
+    INC SIL,X
+    BNE FR1
+    INC SIH,X
+FR1 PLA
+    TAX
+    PLA
+FR2 RTS
+
+; Set the FP stack size
+;
+FPSETSTACKSIZE
+    ASL
+    STA FPSP
+    ROR
+    RTS
+
+; Store the top of the stack in the FP variable whose index is in A
+; ( a -- )
+;
+FPSTORE
+    STA FPTEMP
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    LDX FPSP
+    LDY FPTEMP
+    LDA SFL,X
+    STA FPVARS,Y
+    LDA SFH,X
+    STA FPVARS+2,Y
+    LDA SIL,X
+    STA FPVARS+4,Y
+    LDA SIH,X
+    STA FPVARS+6,Y
+    INX
+    INX
+    STX FPSP
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Subtract top two items on the stack
+; ( a b -- a-b )
+;
+FPSUB
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    SEC
+    LDA SFL+2,X
+    SBC SFL,X
+    STA SFL+2,X
+    LDA SFH+2,X
+    SBC SFH,X
+    STA SFH+2,X
+    LDA SIL+2,X
+    SBC SIL,X
+    STA SIL+2,X
+    LDA SIH+2,X
+    SBC SIH,X
+    STA SIH+2,X
+    INX
+    INX
+    STX FPSP
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Divide (unsigned) top two numbers on stack; return rounding bit in carry
+; ( a b -- a/b )
+;
+FPUDIV
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    LDX FPSP
+    LDA SIL+2,X
+    STA FPTEMP
+    LDA SIH+2,X
+    STA FPTEMP+2
+    LDA #0
+    STA FPTEMP+4
+    STA FPTEMP+6
+    LDA SFL+2,X
+    ASL
+    STA SIL+2,X
+    LDA SFH+2,X
+    ROL
+    STA SIH+2,X
+    LDY #$40
+FD1 ROL FPTEMP   ; FPTEMP holds the remainder
+    ROL FPTEMP+2
+    ROL FPTEMP+4
+    ROL FPTEMP+6
+    BCS FD2
+    LDA FPTEMP
+    CMP SFL,X
+    LDA FPTEMP+2
+    SBC SFH,X
+    LDA FPTEMP+4
+    SBC SIL,X
+    LDA FPTEMP+6
+    SBC SIH,X
+    BCC FD3
+FD2 LDA FPTEMP
+    SBC SFL,X
+    STA FPTEMP
+    LDA FPTEMP+2
+    SBC SFH,X
+    STA FPTEMP+2
+    LDA FPTEMP+4
+    SBC SIL,X
+    STA FPTEMP+4
+    LDA FPTEMP+6
+    SBC SIH,X
+    STA FPTEMP+6
+    SEC
+FD3 ROL SFL+2,X  ; S+2,X holds the quotient
+    ROL SFH+2,X
+    ROL SIL+2,X
+    ROL SIH+2,X
+    DEY
+    BNE FD1
+    ASL FPTEMP   ; If remainder >= bottom / 2 (i.e. 2 * remainder >= b),
+    ROL FPTEMP+2 ;   then set carry for rounding
+    ROL FPTEMP+4
+    ROL FPTEMP+6
+    BCS FD4
+    LDA FPTEMP
+    CMP SFL,X
+    LDA FPTEMP+2
+    SBC SFH,X
+    LDA FPTEMP+4
+    SBC SIL,X
+    LDA FPTEMP+6
+    SBC SIH,X
+FD4 INX
+    INX
+    STX FPSP
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Divide (unsigned) the top of the stack by 2; return rounding bit in carry
+; ( a -- a/2 )
+;
+FPUDIV2
+    PHA
+    TXA
+    PHA
+    LDX FPSP
+    LSR SIH,X
+    ROR SIL,X
+    ROR SFH,X
+    ROR SFL,X
+    PLA
+    TAX
+    PLA
+    RTS
+
+; Multiply (unsigned) top two numbers on stack
+; ( a b -- a*b )
+;
+FPUMUL
+    PHA
+    TXA
+    PHA
+    TYA
+    PHA
+    LDX FPSP
+    LDA #0       ; Initialize product
+    STA FPTEMP
+    STA FPTEMP+2
+    STA FPTEMP+4
+    STA FPTEMP+6
+    LDY #$20
+FM1 LSR SFH+2,X  ; Multiply fractional portion
+    ROR SFL+2,X
+    BCC FM2
+    CLC
+    LDA SFL,X
+    ADC FPTEMP
+    STA FPTEMP
+    LDA SFH,X
+    ADC FPTEMP+2
+    STA FPTEMP+2
+    LDA SIL,X
+    ADC FPTEMP+4
+    STA FPTEMP+4
+    LDA SIH,X
+    ADC FPTEMP+6
+    STA FPTEMP+6
+FM2 ROR FPTEMP+6
+    ROR FPTEMP+4
+    ROR FPTEMP+2
+    ROR FPTEMP
+    DEY
+    BNE FM1
+    PHP
+    LDY #$20
+FM3 LSR SIH+2,X  ; Multiply integer portion
+    ROR SIL+2,X
+    BCC FM4
+    CLC
+    LDA SFL,X
+    ADC FPTEMP
+    STA FPTEMP
+    LDA SFH,X
+    ADC FPTEMP+2
+    STA FPTEMP+2
+    LDA SIL,X
+    ADC FPTEMP+4
+    STA FPTEMP+4
+    LDA SIH,X
+    ADC FPTEMP+6
+    STA FPTEMP+6
+FM4 ASL SFL,X
+    ROL SFH,X
+    ROL SIL,X
+    ROL SIH,X
+    DEY
+    BNE FM3
+    INX
+    INX
+    LDA FPTEMP   ; Copy product to stack
+    STA SFL,X
+    LDA FPTEMP+2
+    STA SFH,X
+    LDA FPTEMP+4
+    STA SIL,X
+    LDA FPTEMP+6
+    STA SIH,X
+    PLP
+    STX FPSP
+    PLA
+    TAY
+    PLA
+    TAX
+    PLA
+    RTS

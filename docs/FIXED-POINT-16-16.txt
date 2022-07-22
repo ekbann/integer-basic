@@ -1,0 +1,329 @@
+; Fixed-Point Constants
+;
+FPSTACKSIZE	= 8  ; Fixed-point stack size
+
+; 4-way, 8-element empty ascending stack
+; (FYI: The 6502 uses a descending empty stack)
+; stack pointer = points to the next free/empty location
+;
+;		.org $22	; start of user ZP
+
+.zeropage	; MUST USE .CODE AND/OR .ORG FOR CODE
+
+FPSP:   	.byte 0		; stack pointer = 0
+FPTEMP: 	.res 4		; FP temp
+SFL:    	.res FPSTACKSIZE
+SFH:    	.res FPSTACKSIZE
+SIL:    	.res FPSTACKSIZE
+SIH:    	.res FPSTACKSIZE
+
+; Fixed-Point Routines
+;
+		.org $9000	; I/O starts at $9F00 (3.75K)
+; Push 16-bit INT in r0 to top of stack (SIL,SIH)
+;
+PUSH:
+		pha
+		phx
+		ldx FPSP
+		lda r0L
+		sta SIL,x
+		lda r0H
+		sta SIH,x
+		inx		; FPSP += 1
+		stx FPSP	; update FPSP
+		plx
+		pla
+		rts
+
+; Pull 16-bit INT from top of stack (SIL,SIH) to r0
+;
+PULL:
+		pha
+		phx
+		ldx FPSP	; load stack pointer
+		dex		; point to topmost element
+		lda SIL,x
+		sta r0L
+		lda SIH,x
+		sta r0H
+		stx FPSP	; update FPSP to new empty location
+		plx
+		pla
+		rts
+
+; Duplicate top of stack
+; ( a -- a a )
+;
+DUP:
+		pha
+		phx
+		ldx FPSP
+		lda SIL-1,x	; copy SIL below
+		sta SIL,x	; ... to current
+		lda SIH-1,x	; copy SIH below
+		sta SIH,x	; ... to current
+		inx		; point to next empty location
+		stx FPSP
+		plx
+		pla
+		rts
+
+; Subtract top two items on the stack
+; ( a b -- a-b )
+;
+SUB:
+		pha
+		phx
+		ldx FPSP
+		dex		; point to TOP "b" element
+		sec
+		lda SIL-1,x	; load BELOW "a"
+		sbc SIL,x	; subtract TOP "b" from BELOW "a"
+		sta SIL-1,x	; save to BELOW "a"
+		lda SIH-1,x	; load BELOW "a"
+		sbc SIH,x	; subtract TOP "b" from BELOW "a"
+		sta SIH-1,x	; save to BELOW "a"
+		stx FPSP	; drop "b", now empty
+		plx
+		pla
+		rts
+
+; Add top two numbers on stack
+; ( a b -- a+b )
+;
+ADD:
+		pha
+		phx
+		ldx FPSP
+		dex		; point to TOP "b" element
+		clc
+		lda SIL-1,x	; load BELOW "a"
+		adc SIL,x	; add TOP "b" to BELOW "a"
+		sta SIL-1,x	; save to BELOW "a"
+		lda SIH-1,x	; load BELOW "a"
+		adc SIH,x	; add TOP "b" to BELOW "a"
+		sta SIH-1,x	; save to BELOW "a"
+		stx FPSP	; drop "b", now empty
+		plx
+		pla
+		rts
+
+; Multiply top of stack by two
+; ( a -- a*2 )
+;
+MUL2:
+		pha
+		phx
+		ldx FPSP
+		asl SIL-1,x	; ASL the element below
+		rol SIH-1,x	; ROL the element below
+		plx
+		pla
+		rts
+
+; Multiply top of stack by ten
+; ( a -- a*10 )
+;
+MUL10:
+		jsr DUP
+		jsr MUL2
+		jsr MUL2
+		jsr ADD
+		jmp MUL2
+
+; Negate top of stack
+; ( a -- -a )
+;
+NEG:
+		pha
+		phx
+		ldx FPSP
+		sec
+		lda #0
+		sbc SIL-1,x
+		sta SIL-1,x
+		lda #0
+		sbc SIH-1,x
+		sta SIH-1,x
+		plx
+		pla
+		rts
+
+; Multiply (unsigned) top two numbers on stack (shift-rotate)
+; ( a b -- a*b )
+;
+; 32-bit result: $aa.bb.cc.dd
+; FPTEMP=dd, FPTEMP+1=cc, FPTEMP+2=bb, FPTEMP+3=aa 
+;
+UMUL:
+		pha
+		phx
+		phy
+		lda #$00
+		sta FPTEMP+2	; clear upper bits of product
+		sta FPTEMP+3
+		ldx FPSP	; SP points to next EMPTY element
+		dex		; SP now points to TOP element
+		ldy #$10	; set binary count to 16
+UMSHR:				; shift right
+		lsr SIH-1,x	; divide multiplier by 2
+		ror SIL-1,x
+		bcc UMROR
+		lda FPTEMP+2	; get upper half of product and add multiplicand
+		clc
+		adc SIL,x
+		sta FPTEMP+2
+		lda FPTEMP+3
+		adc SIH,x
+UMROR:				; rotate right
+		ror		; rotate partial product
+		sta FPTEMP+3
+		ror FPTEMP+2
+		ror FPTEMP+1
+		ror FPTEMP
+		dey
+		bne UMSHR
+		stx FPSP	; drop "b", now empty
+		lda FPTEMP	; LO byte of least-significant WORD
+		sta SIL-1,x	; replace "a" with least-significant WORD
+		lda FPTEMP+1	; HI byte of least-significant WORD
+		sta SIH-1,x	; most-significant WORD in FPTEMP+2/3
+		ply
+		plx
+		pla
+		rts
+
+; Divide (unsigned) top two numbers on stack; return rounding bit in carry
+; ( a b -- a/b )
+;
+; FPTEMP+0,FPTEMP+1 = remainder
+;
+UDIV:
+		pha
+		phx
+		phy
+		lda #$00
+		sta FPTEMP	; clear remainder
+		sta FPTEMP+1
+		ldx FPSP
+		dex
+		ldy #16		;repeat for each bit: ...
+UDLOOP:
+		asl SIL-1,x	;dividend lb & hb*2, msb -> Carry
+		rol SIH-1,x
+		rol FPTEMP	;remainder lb & hb * 2 + msb from carry
+		rol FPTEMP+1
+		lda FPTEMP
+		sec
+		sbc SIL,x	;substract divisor to see if it fits in
+		sta UDSAVE	;lb result -> save, for we may need it later
+		lda FPTEMP+1
+		sbc SIH,x
+		bcc UDSKIP	;if carry=0 then divisor didn't fit in yet
+		sta FPTEMP+1	;else save substraction result as new remainder,
+		lda UDSAVE	;no need to pha/pla
+		sta FPTEMP
+		inc SIL-1,x	;and INCrement result cause divisor fit in 1 times
+UDSKIP:
+		dey
+		bne UDLOOP
+		stx FPSP
+		ply
+		plx
+		pla
+		rts
+
+UDSAVE:		.res 1		; ### maybe use FPTEMP+3 (ZP) as scratch
+
+; Divide (unsigned) the top of the stack by 2; return rounding bit in carry
+; ( a -- a/2 )
+;
+UDIV2:
+		pha
+		phx
+		ldx FPSP
+		lsr SIH-1,x
+		ror SIL-1,x
+		plx
+		pla
+		rts
+
+;
+;
+;
+MOD:
+
+;
+;
+;
+ABS:
+
+;
+;
+;
+SGN:
+
+;
+;
+;
+RND:
+
+;
+;
+;
+SQRT:
+
+;
+;
+;
+SQR:
+
+; Table is 320 bytes long (256 + 64)
+; https://gist.github.com/funkfinger/965900
+;
+SINE:	; first quadrant 0-63
+	.byte  0x80, 0x83, 0x86, 0x89, 0x8C, 0x90, 0x93, 0x96,
+	.byte  0x99, 0x9C, 0x9F, 0xA2, 0xA5, 0xA8, 0xAB, 0xAE,
+	.byte  0xB1, 0xB3, 0xB6, 0xB9, 0xBC, 0xBF, 0xC1, 0xC4,
+	.byte  0xC7, 0xC9, 0xCC, 0xCE, 0xD1, 0xD3, 0xD5, 0xD8,
+	.byte  0xDA, 0xDC, 0xDE, 0xE0, 0xE2, 0xE4, 0xE6, 0xE8,
+	.byte  0xEA, 0xEB, 0xED, 0xEF, 0xF0, 0xF1, 0xF3, 0xF4,
+	.byte  0xF5, 0xF6, 0xF8, 0xF9, 0xFA, 0xFA, 0xFB, 0xFC,
+	.byte  0xFD, 0xFD, 0xFE, 0xFE, 0xFE, 0xFF, 0xFF, 0xFF,
+COSINE:	; second quadrant 64-127
+	.byte  0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0xFE, 0xFE, 0xFD,
+	.byte  0xFD, 0xFC, 0xFB, 0xFA, 0xFA, 0xF9, 0xF8, 0xF6,
+	.byte  0xF5, 0xF4, 0xF3, 0xF1, 0xF0, 0xEF, 0xED, 0xEB,
+	.byte  0xEA, 0xE8, 0xE6, 0xE4, 0xE2, 0xE0, 0xDE, 0xDC,
+	.byte  0xDA, 0xD8, 0xD5, 0xD3, 0xD1, 0xCE, 0xCC, 0xC9,
+	.byte  0xC7, 0xC4, 0xC1, 0xBF, 0xBC, 0xB9, 0xB6, 0xB3,
+	.byte  0xB1, 0xAE, 0xAB, 0xA8, 0xA5, 0xA2, 0x9F, 0x9C,
+	.byte  0x99, 0x96, 0x93, 0x90, 0x8C, 0x89, 0x86, 0x83,
+	; third quadrant 128-191
+	.byte  0x80, 0x7D, 0x7A, 0x77, 0x74, 0x70, 0x6D, 0x6A,
+	.byte  0x67, 0x64, 0x61, 0x5E, 0x5B, 0x58, 0x55, 0x52,
+	.byte  0x4F, 0x4D, 0x4A, 0x47, 0x44, 0x41, 0x3F, 0x3C,
+	.byte  0x39, 0x37, 0x34, 0x32, 0x2F, 0x2D, 0x2B, 0x28,
+	.byte  0x26, 0x24, 0x22, 0x20, 0x1E, 0x1C, 0x1A, 0x18,
+	.byte  0x16, 0x15, 0x13, 0x11, 0x10, 0x0F, 0x0D, 0x0C,
+	.byte  0x0B, 0x0A, 0x08, 0x07, 0x06, 0x06, 0x05, 0x04,
+	.byte  0x03, 0x03, 0x02, 0x02, 0x02, 0x01, 0x01, 0x01,
+	; fourth quadrant 191-255
+	.byte  0x01, 0x01, 0x01, 0x01, 0x02, 0x02, 0x02, 0x03,
+	.byte  0x03, 0x04, 0x05, 0x06, 0x06, 0x07, 0x08, 0x0A,
+	.byte  0x0B, 0x0C, 0x0D, 0x0F, 0x10, 0x11, 0x13, 0x15,
+	.byte  0x16, 0x18, 0x1A, 0x1C, 0x1E, 0x20, 0x22, 0x24,
+	.byte  0x26, 0x28, 0x2B, 0x2D, 0x2F, 0x32, 0x34, 0x37,
+	.byte  0x39, 0x3C, 0x3F, 0x41, 0x44, 0x47, 0x4A, 0x4D,
+	.byte  0x4F, 0x52, 0x55, 0x58, 0x5B, 0x5E, 0x61, 0x64,
+	.byte  0x67, 0x6A, 0x6D, 0x70, 0x74, 0x77, 0x7A, 0x7D,
+	; extra quadrant for COSINE
+	.byte  0x80, 0x83, 0x86, 0x89, 0x8C, 0x90, 0x93, 0x96,
+	.byte  0x99, 0x9C, 0x9F, 0xA2, 0xA5, 0xA8, 0xAB, 0xAE,
+	.byte  0xB1, 0xB3, 0xB6, 0xB9, 0xBC, 0xBF, 0xC1, 0xC4,
+	.byte  0xC7, 0xC9, 0xCC, 0xCE, 0xD1, 0xD3, 0xD5, 0xD8,
+	.byte  0xDA, 0xDC, 0xDE, 0xE0, 0xE2, 0xE4, 0xE6, 0xE8,
+	.byte  0xEA, 0xEB, 0xED, 0xEF, 0xF0, 0xF1, 0xF3, 0xF4,
+	.byte  0xF5, 0xF6, 0xF8, 0xF9, 0xFA, 0xFA, 0xFB, 0xFC,
+	.byte  0xFD, 0xFD, 0xFE, 0xFE, 0xFE, 0xFF, 0xFF, 0xFF

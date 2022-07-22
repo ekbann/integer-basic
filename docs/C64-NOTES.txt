@@ -1,0 +1,78 @@
+Basic memory layout and garbage collection
+
+In the default memory layout of the C64, Basic memory is allocated at address 2049 to 40959. When the computer starts, this is reported as 38911 Basic bytes free. When you load or enter a Basic program, or even start executing Basic commands at the prompt, Basic will start to use this memory area for several different purposes. It is divided into five different regions, each of which can be zero bytes in size. They are always stored in this order:
+
+Basic program storage (starts at 2049)
+Normal variable storage
+Array variable storage
+Free memory
+String heap (ends at 40959)
+
+The string heap is located at the top of Basic memory. Whenever you create a new string value, it is added to the heap. If a string variable is assigned this value, the two-byte pointer associated with the string variable will now point to this address in the string heap. If the string variable already had a value, the old value will just be left on the heap as an orphan (nothing points to it). In this way, the string heap grows downwards until there is no more free memory. At this point, a garbage collection is triggered, which will usually shrink the string heap in size, so program execution can continue. If not enough memory can be freed up, the Basic interpreter will print an out of memory error and stop.
+
+A garbage collection is quite disruptive as it will cause a pause in program execution. Depending on the program, this pause may last anywhere from a few tenths of a second up to a minute or more. If you want to avoid this during a certain part of your program, you can force a garbage collection event just before that part, by using the function FRE() in Basic. FRE() is used to calculate the amount of free memory, and to do this, Basic first does a garbage collection to minimize the string heap.
+
+Also note that array variables are stored directly after normal variables. This means that whenever you create a normal variable, all array variables must be moved. For this reason, you want to start using all your normal variables first, then issue the DIM statements to setup your array variables.
+
+(Maybe) use an index array for sorting
+
+Whenever you assign a new value to a string, or create a temporary string in your code (i.e by using MID$), the string value is added to the string heap. When the string heap is full, a garbage collection occurs. If you have a lot of string variables, this will take a lot of time and probably be quite disturbing. One thing you can do to avoid this is to use an index array when you need to sort strings - you keep all the strings in their original order in the string array, but create an integer array on the side to hold the sorted order of the strings. This means that instead of lettng two string values trade places in an array, as you typically do in a sort algorithm, you let two numbers trade places. I.e. instead of T$=S$(I):S$(I)=S$(J):S$(J)=T$ you do T%=S%(I):S%(I)=S%(J):S%(J)=T% . This is often slower than sorting without an index array, but it does make garbage collections a lot more rare.
+
+You can do a lot in 10KB of code, and AppleSoft
+wasn't that large compared to BBC BASIC. It would need to be done
+in assembler as the code was likely highly compressed. Performance
+was a dirty word at the time, anything was done to save a few bytes.
+
+A perfect illustration of this is Steve Wozniac's floating point code
+http://www.6502.org/source/floats/wozfp3.txt (part of the Apple II ROM).
+At 114 instructions and 212 bytes for 32-bit float add/sub/mul/div it is
+amazingly small. However don't ask how many thousand cycles each
+operation could take, why it doesn't round at all, etc.
+
+My point is that you can trade performance and functionality for codesize.
+On 32-bit CPUs people choose for more functionality (eg. IEEE 754) and
+much higher performance and only pay a modest cost in terms of codesize.
+The tradeoffs are simply different.
+
+Many people are no longer surprised to find their computers executing:
+
+S=0
+FOR I = 1 to 1000
+S = S + 0.1
+NEXT
+PRINT S
+
+and not printing 100. They realize that computer arithmetic is in some ways different from the arithmetic they learned in mathematics classes. The typical computer user will attempt to ignore these discrepancies, proceed as if dealing with ordinary (real) numbers, and then acknowledge that his results may contain some “insignificant” round-off error. The user may know that for some computations, a computer’s arithmetic fails to produce usable results. He may believe this happens only for contrived problems, or only for people with unusually bad luck. If his program fails to obtain results, or if he recognizes his results contain significant errors, he still may not suspect computer arithmetic as the culprit
+
+How good was Woz's FP code?
+
+I just came across this amazing 1976 article by Woz. In it he describes a relatively complete floating-point system for the 6502 with a 32-bit format (similar to earlier MS code).
+
+I understand the code, mostly, but I am curious about its performance. I know that a lot of it runs through FMUL and thus one would expect that newer designs using unwound loops and/or self-modifying code would improve on that.
+
+But given the constraints of the time, mostly memory and a desire to be read-only (for some machines anyway), has this code been greatly improved upon?
+
+I have poked about a bit for benchmarks comparing this code to MS's version, but have not found anything applicable - the Rugg/Feldmann would do it but the only numbers I see are for MS BASIC vs. Integer, so Woz's FP code is not being run in either case.
+
+The code includes logic to work around a bug in the ROR instruction of the very first 6502 microprocessors, and would probably be more than twice as fast without that.
+
+Addresses $1F66 to $1F75 could be replaced by 12 bytes worth of LSR and ROR instructions with total execution time of 30 cycles. Instead, they run six iterations of a loop with an execution time of 25 cycles/iteration. That function probably represents the majority of the execution time of a floating-point multiply.
+
+The Rankin/Wozniak code doesn't handle NaNs or Infs and has no transcendental functions, so it's of limited general use today. It's also single precision, so cumulative rounding errors will build up quickly.
+
+Steve Wozniak wrote most of his software to be compact rather than fast, reflecting the constraints of affordable memory hardware of his time. That often resulted in contortions that made it run considerably slower than a speed-optimised implementation, such as the extensive reuse of the FMUL subroutine mentioned.
+
+Home micros sold before 1980 typically came with 8K or 16K of ROM in total, which had to support all the features of both BASIC and native user programs. The early Apple machines were no exception.
+
+FP routines written for a less space-constrained machine, such as the BBC Micro which often had 48K of ROM from the factory (16K MOS, 16K BASIC, 16K DFS), could be considerably faster due to the use of more specialised routines and more speed-optimised coding techniques that took up more space. The BBC Master capitalised on a 128K "MegaROM" (named because 128KB = 1 megabit) and the more capable 65C02 to further accelerate the FP and graphics routines.
+
+It's hard to directly compare Woz FP and BBC Micro FP because they operate to different precisions - 4 and 5 bytes respectively - so the BBC Micro has to do more work to complete its calculations. Nevertheless, a Mandelbrot-based benchmark on different BASICs ported to a common (relatively fast) machine shows that the BBC implementation was still faster:
+
+ehBasic: 172 seconds
+Applesoft: 161 seconds
+BBC Basic 1-3: 124 seconds
+BBC Basic 4: 96 seconds
+
+In the above table, ehBasic is effectively an expanded version of MS BASIC implementing a 5-byte FP format. BBC Basic 4 is the Master version using 65C02 instructions.
+
+The 65C02 includes several extra instructions and addressing modes which are very useful in practice. Looking at 8bs.com/basic/basic4-a6cf.htm (scroll down), the FMUL routine uses PHX and PLX, instructions which on the NMOS 6502 have to be emulated with TXA:PHA and PLA:TAX respectively, clobbering the accumulator which requires more instructions to save and restore. In other cases the indirect mode without indexing can save having to clobber the X or Y register, when the ZP pointer is correct as-is.

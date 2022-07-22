@@ -2,6 +2,7 @@
 .include "./includes/header.inc"
 
 L10:		; REM ASSIGNMENT
+L15:		; REM VARIABLE 'A' BREAKS CA65
 L20:		PushInt 3
 		PullVar A
 L30:		PushInt 1

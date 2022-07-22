@@ -1,0 +1,45 @@
+Integer BASIC
+aka Game BASIC
+aka Apple BASIC
+
+Integer BASIC is a BASIC interpreter written by Steve Wozniak for the Apple I and Apple II computers released in 1976.
+
+The language supported mathematics using integers, lacking floating-point support. Using integers allowed numbers to be stored in a much more compact 16-bit format that could be more rapidly read and processed than the 32- or 40-bit floating-point formats found in most BASICs of the era.
+
+Another difference with other BASICs of the era is that Integer BASIC treated strings as arrays of characters, similar to the system in C or Fortran 77. Substrings were accessed using array slicing rather than string functions.
+
+The language was initially developed under the name GAME BASIC and referred to simply as Apple BASIC when it was introduced on the Apple I. It became Integer BASIC when it was ported to the Apple II and shipped alongside Applesoft BASIC, a port of Microsoft BASIC which included floating-point support. Integer BASIC was phased out in favor of Applesoft BASIC starting with the Apple II Plus in 1979.
+
+Wozniak did complete a floating-point library for the 6502 and published it in the August 1976 edition of Dr. Dobbs. This library was later made part of the ROMs for the Apple II. Wozniak began work on back-porting the floating-point code into Apple BASIC, but got sidetracked in the task of designing a floppy disk controller for what became the Disk II.
+
+Mathematics
+Integer BASIC, as its name implies, uses integers as the basis for its math package. These were stored internally as a 16-bit number, little-endian (as is the 6502). This allowed a maximum value for any calculation between -32767 and 32767; although the format could also store the value -32768, BASIC could not display that number. Calculations that resulted in values outside that range produced a >32767 ERR.[36]
+
+Infix operators included + (addition), - (subraction), * (multiplication), / (division), MOD (remainder) and exponent using the ^ character. Binary operators included AND, OR and NOT. Binary comparisons included the standard set of =, >, <, >=, <=, <> and the HP-inspired #, which was equivalent to <>.[37]
+
+Only single-dimension arrays were allowed, limited in size only by the available memory.[38] Mathematical functions were sparse; only ABS (absolute value), SGN (sign) and RND (random number) were supported.[39] In contrast to MS-derived versions, where the parameter was ignored and RND always returned a value 0..<1, Integer BASIC used the parameter; RND(6) returned an integer from 0 to 5.[40]
+
+Strings
+Integer BASIC's string handling was based on the system in HP BASIC. This treated string variables as arrays of characters which had to be DIMed prior to use. This is similar to the model in C[41] or Fortran 77.[42] This is in contrast to MS-like BASICs where strings are an intrinsic variable-length type.[43] Before MS-derived BASICs became the de facto standard, this style was not uncommon; North Star BASIC[44] and Atari BASIC[45] used the same concept, as did others.
+
+Strings in Integer Basic used a fixed amount of memory regardless of the number of characters used within them, up to a maximum of 255 characters.[46] This had the advantage of avoiding the need for the garbage collection of the heap that was notoriously slow in MS BASIC[h] but meant that strings that were shorter than the declared length was wasted.
+
+Substring access was provided through array slicing syntax. For instance, PRINT A$(0,5) printed the first six characters of A$, characters 0 through 5.[48][48][i] Concatenation was provided using the same system, A$(5)="ABC" replaced any characters starting at position 5 with the string "ABC".[49] This contrasts with the DEC/MS-style string handling which uses string functions like MID$ to access substrings and + for concatenation.[50][j]
+
+As many of the features that would be provided by string functions were instead provided by array slicing, the selection of string functions was reduced. LEN$ returned the length of a string[46] and ASC returned the ASCII numeric code for the first letter in a string.[51] It lacked an equivalent of the CHR$ that returned the ASCII character with a given numeric code.[52]
+
+Support for graphics was more detailed. Graphics mode was turned on with the GR statement and off with TEXT.[56] Drawing was modal and normally started by issuing a command to change the color, which was accomplished by setting a pseudo-variable; COLOR=12 would set the drawing color to 12, light green. One could then PLOT 10,10 to produce a single spot of that color,[57] HLIN 0,39 AT 20 to draw a horizontal line at row 20 that spanned the screen, or VLIN 5,15 AT 7 to draw a shorter vertical line down column 7.[58] A=SCRN X,Y returned the color of the screen at X,Y.[51][m]
+
+Input/output
+Integer BASIC lacked any custom input/output commands, and also lacked the DATA statement and the associated READ. To get data into and out of a program, the input/output functionality was redirected to a selected card slot with the PR#x and IN#x, which redirected output or input (respectively) to the numbered slot. From then on, data could be sent to the card using conventional PRINT commands and read from it using INPUT.[51]
+
+Other notes
+Integer BASIC included a TAB feature, which positioned the cursor on a given column from 0 to 39. It differed from the versions found in most BASICs in that it was a command with a following number, as opposed to a function with the value in parenthesis; one would move the cursor to column 10 using TAB 10 in Integer BASIC[59] whereas in MS this would be PRINT TAB(10). Additionally, the VTAB command worked similar to TAB but added vertical spaces instead of horizontal. For unexplained reasons, in this case the coordinates were from 1 to 24 rather than 0 to 23.[60]
+
+Integer BASIC included a POP command to exit from loops.[51] This popped the topmost item off the FOR stack. Atari BASIC also supported the same command,[61] while North Star BASIC used EXIT.[62]
+
+===
+
+Floating point
+Although Integer BASIC contained its own math routines, the Apple II ROMs also included a complete floating-point library located in ROM memory between $F425-F4FB and $F63D-F65D. The source code was included in the Apple II manual. BASIC programs requiring floating-point calculations could CALL into these routines.
+
