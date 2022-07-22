@@ -33,6 +33,20 @@ PULL:
 		pla
 		rts
 
+; Copies 16-bit INT from top of stack (SIL,SIH) to r0
+;
+PEEK:
+		pha
+		phx
+		ldx FPSP	; load stack pointer
+		lda SIL-1,x
+		sta r0L
+		lda SIH-1,x
+		sta r0H
+		plx
+		pla
+		rts
+
 ; Duplicate top of stack
 ; ( a -- a a )
 ;
@@ -430,6 +444,55 @@ UMOD:
 		plx
 		pla
 		rts
+
+; Divide (SIGNED) the top of the stack by 2
+; ( a -- a/2 )
+;
+DIV2:
+			pha
+			phx
+			ldx FPSP		; load stack pointer to .X
+			lda SIH-1,x		; load the msb
+  			cmp #$80        ; copy the sign bit into c
+  			ror SIH-1,x     ; rotate sign into the msb
+  			and SIL-1,x     ; check for special case -1
+  			ror SIL-1,x     ; rotate the lsb as normal
+  			eor #$ff        ; complete the -1 detection
+  			bne DIV2END
+  			sta SIH-1,x     ; force result to 0 only if
+  			sta SIL-1,x     ; original input was -1
+DIV2END:	plx
+			pla
+			rts
+
+; ***
+; *** WORK IN PROGRESS
+; ***
+; Divide (unsigned) the top of the stack by 10
+; ( a -- a/10 )
+;
+UDIV10:		pha
+			phx
+			PushInt $cccd
+			jsr UMUL
+			ldx #19
+UD10ROR:	jsr FPTROR
+			dex
+			cpx #0
+			bne UD10ROR
+			ldx FPSP		; load stack pointer to .X
+			lda FPTEMP+1	; msb
+			sta SIH-1,x		; move from temp to stack
+			lda FPTEMP		; lsb
+			sta SIL-1,x		; move from temp to stack
+			plx
+			pla
+			rts
+FPTROR:		lsr FPTEMP+3
+			ror FPTEMP+2
+			ror FPTEMP+1
+			ror FPTEMP
+			rts
 
 ; Return absolute value of top number on stack
 ; ( a -- abs(a))

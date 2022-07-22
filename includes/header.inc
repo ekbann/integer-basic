@@ -68,7 +68,7 @@ FPSTACKSIZE	= 12  ; Fixed-point stack size, Integer BASIC has maximum 12 nested 
 
 BUFP:		.word 0			; BUFFER pointer = next available space to save space for in-program DIM initialization
 FPSP:   	.word 0			; stack pointer = 0 (WORD) in case stack needs to be in higher memory
-FPTEMP: 	.res 4			; FP temp
+FPTEMP: 	.res 8			; FP temp; was 4 but should be 8 for 64-bit temp storage?
 SFL:    	.res FPSTACKSIZE
 SFH:    	.res FPSTACKSIZE
 SIL:    	.res FPSTACKSIZE

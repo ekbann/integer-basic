@@ -1,34 +1,86 @@
 .include "./includes/macros.inc"
 .include "./includes/header.inc"
 
-        StoreImm $fb2e, r0
-        jsr PUSH
-        jsr STACK
-        PrintNewline
-        jsr ABS
-        jsr STACK
-        PrintNewline
-        jsr TEMP
-        PrintNewline
+ ;       StoreImm $fb2e, r0
+ ;       jsr PUSH
+ ;       jsr STACK
+ ;       ;PrintNewline
+ ;       jsr ABS
+ ;       jsr STACK
+ ;       ;PrintNewline
+ ;       jsr TEMP
+ ;       PrintNewline
 
-        StoreImm $fade, r0  ; 1314
-        ldy #0              ; padding with nothing
-        jsr PrSgnDec16
-        PrintNewline
-        jsr PUSH
-        jsr ABS
-        jsr PULL
-        ldy #0
-        jsr PrSgnDec16
-        PrintNewline
+ ;       StoreImm $fade, r0  ; -1314
+ ;       ldy #0              ; padding with nothing
+ ;       jsr PrSgnDec16
+ ;       PrintNewline
+ ;       jsr PUSH
+ ;       jsr ABS
+ ;       jsr PULL        ; r0 will be clobbered!
+ ;       ldy #0
+ ;       jsr PrSgnDec16  ; clobbers r0
+ ;       PrintNewline
+ ;       PrintNewline
 
-        StoreImm $3039, r0  ; 12345
-        jsr PUSH
-        StoreImm $cccd, r0
-        jsr PUSH
-        jsr UMUL
-        jsr TEMP
+        ; Testing code for UDIV10
+        ;StoreImm $3039, r0      ; 12345
+        ;jsr PUSH
+        ;StoreImm $cccd, r0
+        ;jsr PUSH
+        ;jsr UMUL                ; 0x3039 * 0xcccd = 0x2694.09a5
+        ;jsr TEMP
         ; need to shift bits right in FPTEMP 19 times
+        ;PrintNewline
+
+        ; test stack
+ ;       PrintNewline
+ ;       PushInt $1
+ ;       jsr STACK
+ ;       PrintNewline
+ ;       PushInt $2
+ ;       jsr STACK
+ ;       PrintNewline
+ ;       PushInt $3
+ ;       jsr STACK
+ ;       PrintNewline
+ ;       PushInt $4
+ ;       jsr STACK
+        PrintNewline
+
+        ;test UDIV10 routine
+        PushInt $303a   ; 12346
+        jsr STACK
+        ;PrintNewline
+        jsr PEEK
+        ldy #0
+        jsr PrDec16  ; 1234, clobbers r0
+        PrintNewline
+        PrintNewline
+        jsr UDIV10
+        jsr STACK
+        ;PrintNewline
+        jsr PEEK
+        ldy #0
+        jsr PrDec16  ; 1234, clobbers r0
+        PrintNewline
+;        jsr STACK
+;        PrintNewline
+
+;        StoreImm $ff80, r0      ; -128
+;        jsr PUSH
+;        ldy #0              ; padding with nothing
+;        jsr PrSgnDec16
+;        PrintNewline
+;        jsr DIV2
+;        jsr PEEK
+;        ldy #0
+;        jsr PrSgnDec16          ; outputs -64
+;        PrintNewline
+;        jsr PEEK                ; b/c PrSgnDec16 clobbers r0
+;        jsr PrHex16             ; outputs $ff40
+;        PrintNewline
+        rts
 
 BUFFER:
 

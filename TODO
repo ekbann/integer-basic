@@ -3,3 +3,7 @@ UNIT: loop1
 
 UNIT: assignment
     variable "A" crashes ca65 assembler, conflict with cc65 macros
+
++ Need to print FPTEMP from 4 bytes to 8 bytes(?).
++ Check functions that uses FPTEMP now using 8 bytes.
++ Verify if Q16.16 needs 64-bit temp storage.
