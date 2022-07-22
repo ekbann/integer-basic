@@ -50,9 +50,10 @@
         StoreImm $e000, r1  ; 0.500 + 0.250 + 0.125 = 0.8750
         jsr FPPUSH
         jsr PrFP32
+        PrintNewline
 
-        ;jsr FPSTACK
-        ;PrintNewline
+        jsr FPSTACK
+        PrintNewline
 
         rts
 
