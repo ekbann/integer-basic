@@ -1,0 +1,49 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+        PrintNewline
+        ; test FPSTACK
+        StoreImm $0001, r0  ; 1
+        StoreImm $8000, r1  ; 0.5
+        jsr FPPUSH
+
+        ; test: print fixed-point unsigned from top of stack
+        ;jsr PrFP32
+
+        StoreImm $0002, r0  ; 2
+        StoreImm $4000, r1  ; 0.250
+        jsr FPPUSH
+        ;jsr PrFP32
+        StoreImm $0003, r0  ; 3
+        StoreImm $2000, r1  ; 0.125
+        jsr FPPUSH
+        ;jsr PrFP32
+        StoreImm $0004, r0  ; 4
+        StoreImm $e000, r1  ; 0.500 + 0.250 + 0.125 = 0.8750
+        jsr FPPUSH
+        ;jsr PrFP32
+        PrintNewline
+
+        jsr FPSTACK
+        PrintNewline
+
+        ; test atoi
+        LoadAddress S1          ; +123.456 to r0
+        jsr atoi
+        jsr FPSTACK
+        PrintNewline
+        jsr PULL
+        ;ldy #48                 ; pad = '0'
+        ldy #0
+        jsr PrSgnDec16
+        PrintNewline
+        PrintNewline
+
+        rts
+
+S1:     .asciiz "+123.456"
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"

@@ -10,3 +10,25 @@ UNIT: assignment
 + Verify if Q16.16 needs 64-bit temp storage. YES
 + learn to compile a library and only add used functions to the final code.
 DONE + PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.
+
+CONVERT MANTISSA Q16.16 ==> .16 part to INTEGER ==> PrDec16
+		PUSH mantissa (16-bit) as an integer
+		decimal 10,000 ($2710); largest that fits in 16-bit
+        jsr UMUL	; (mantissa * 10000) / (2^16) <-- just the MSW of FP
+        mantissa is always UNSIGNED
+
+CONVERT ASCII MANTISSA ==> to .16 part
+        ASCII to UNSIGNED INTEGER (normal ATOI)
+        Copy mantissa INT to SIL/SIH, zero SFL/SFH == ffff:0000 (32-bit) use FPTEMP
+        UDIV by $2710
+        Copy LSW (least significant WORD) to SFL/SFH
+        therefore... NEED 32-bit DIV 16-bit == 16-bit RESULT
+
+FPMUL32
+FP (32-bit) x FP (32-bit) = 64-bit FPTEMP ==> 8 bytes
+iiii.ffff x iiii.ffff = aaaa.bbbb:cccc.cccc
+result = bbbb:cccc
+
+FPDIV32
+
+
