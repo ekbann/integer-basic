@@ -5,7 +5,8 @@ UNIT: assignment
     variable "A" crashes ca65 assembler, conflict with cc65 macros
     cc65 treats "A" as accumulator, need to rename variables as "var_A"
 
-+ Need to print FPTEMP from 4 bytes to 8 bytes(?).
++ Need to print FPTEMP from 4 bytes to 8 bytes(?). YES
 + Check functions that uses FPTEMP now using 8 bytes.
-+ Verify if Q16.16 needs 64-bit temp storage.
++ Verify if Q16.16 needs 64-bit temp storage. YES
 + learn to compile a library and only add used functions to the final code.
+DONE + PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.

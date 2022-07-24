@@ -11,6 +11,8 @@ PUSH:
 		sta SIL,x
 		lda r0H
 		sta SIH,x
+		stz SFL,x	; ZERO mantissa part to avoid garbage when moving up/down the stack
+		stz SFH,x
 		inx		; FPSP += 1
 		stx FPSP	; update FPSP
 		plx

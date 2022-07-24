@@ -55,8 +55,66 @@
         jsr FPSTACK
         PrintNewline
 
+        ; test atoi
+        LoadAddress S0          ; 12345 to r0
+        jsr atoi
+        jsr FPSTACK
+        PrintNewline
+        PrintNewline
+        jsr PULL
+        ldy #0
+        jsr PrSgnDec16
+        PrintNewline
+        PrintNewline
+        jsr FPSTACK
+        PrintNewline
+
+        LoadAddress S1          ; +123.456 to r0
+        jsr atoi
+        jsr FPSTACK
+        PrintNewline
+        jsr PULL
+        ldy #48                 ; pad = '0'
+        jsr PrSgnDec16
+        PrintNewline
+        PrintNewline
+
+        LoadAddress S2          ; -32123 to r0
+        jsr atoi
+        jsr PULL
+        ldy #0
+        jsr PrSgnDec16
+        PrintNewline
+        PrintNewline
+
+        ; test padding PrDec16
+        jsr PULL
+        ldy #48
+        jsr PrSgnDec16
+        PrintNewline
+        PrintNewline
+        jsr FPSTACK
+        PrintNewline
+
+        ; test PUSH zeroes SFL/SFH part
+        StoreImm $0004, r0  ; 4
+        StoreImm $e000, r1  ; 0.500 + 0.250 + 0.125 = 0.8750
+        jsr FPPUSH        
+        jsr FPSTACK
+        PrintNewline
+        jsr DROP
+        lda #$7b
+        sta r0L
+        stz r0H
+        jsr PUSH
+        jsr FPSTACK
+        PrintNewline
+
         rts
 
+S0:     .asciiz "12345"
+S1:     .asciiz "+123.456"
+S2:     .asciiz "-32123"
 BUFFER:
 
 .include "./includes/io.a65"
