@@ -1,0 +1,38 @@
+Why INTEGER BASIC? Woz explains: "I wrote down a complete syntax chart of the
+commands that were in the H-P BASIC manual, and I included floating point
+arithmetic, decimal points, numbers and everything. Then I started thinking
+it was going to take me a month longer - I could save a month if I left out
+the floating point."
+
+Wozniak was confident that a good mathematician can work around the
+limitation of integers: "We made the first handheld scientific calculators at
+H-P, that's what I was designing, and they would work with transcendental
+numbers, like SIN and COSIN. And was everything floating point? No! We did
+all the calculations inside our calculators digitally, for higher accuracy
+and higher speed, with integers. I said, basically integers can solve
+anything. I was a mathematician of the type that wanted to solve things with
+integers. You could always have dollars and cents as separate integer numbers
+- all you need for games is integers. So I thought, I'll save a month writing
+my BASIC, and I'll have a chance to be known as the first one to write a
+BASIC for the 6502 processor. I said: I'll become famous like Bill Gates if I
+write it the fastest I could. So I stripped out the floating point."
+
+Lastly, Woz reminisces, "I liked Integer BASIC. There's a lot of things you
+could do to save time, but you have to think mathematically. And most people
+would rather just have the easy world - so it wasn't good for most people.
+But for my type of person, Integer was great. I would want to do things with
+integers."
+
+Given that it's been 50 years since BASIC was formed, does he believe it
+still has a place in the world? "I think it does. I still recommend it
+frequently, as the right way to start programming classes. Or at least a
+simpler language like BASIC - it's probably pretty hard to find the exact,
+plain old original BASIC in this day of graphics on computers. But yes, I do."
+
+"But as far as the introduction to computing... To me BASIC and FORTRAN are
+the same. Either one of those, that's the right way to start, and not a real
+super structured language where you have to learn so much about the
+structure. It's better to learn structure from the ground up, the basic
+atoms. Which is what BASIC is. To learn the structure from the ground up,
+once you've learned it you will apply it in a structured language. Then
+you're ready for it."
