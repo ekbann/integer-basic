@@ -1,5 +1,4 @@
-Implementation Notes:
-===================== 
+# Implementation Notes:
 
 Integer BASIC's string handling was based on the system in HP BASIC. This
 treated string variables as arrays of characters which had to be DIMed prior
