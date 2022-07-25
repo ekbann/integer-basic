@@ -393,8 +393,13 @@ UM8ROR:
 ; 16-bit QUOTIENT result stored at SFH-1/SFL-1
 ; 16-bit REMAINDER result stored at SIH-1/SIL-1
 ;
-; Scratch byte = r11L
-; Carry byte for 17th bit = r11H
+; Scratch TEMP byte = r11L
+; CARRY byte for 17th bit = r11H
+;
+; r11L is used for an intermediate scratchpad byte.
+; X is used for loop-counting.
+; Y is used for temporary byte storage.
+; Overflow and divide by zero are shown by FFFF in both quotient and remainder.
 ;
 U32DIV16:
 		pha

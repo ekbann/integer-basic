@@ -1,4 +1,4 @@
-URGENT? Function ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
+URGENT: ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
     3.14159 => "14,159" overflows the "9,999" limit
     PrFP32 works by printing "xxxx" twice (two UMUL $2710)
     but ATOFP needs work... reverse PrFP32 and undo twice with mantissa text processed:
@@ -7,7 +7,10 @@ URGENT? Function ATOFP is buggy because it can only process 4 digits in the mant
     start undoing "bbbb" = "9000":
         9000:0000 / 10000 = "0000:xxxx" where xxxx is the LSW for the next round
     start undoing "aaaa" = "1415":
-        1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000 
+        1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000
+
+U32DIV16: .Y is used for temporary byte storage.
+    use a memory location instead and use .Y (or .X) for FPSP index == smaller code
 
 PrFP32: maybe convert it to print from r0/r1 like PrDec16 prints from r0 (but copies to r11)
 
