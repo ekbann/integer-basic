@@ -1,6 +1,4 @@
-============================
 Integer BASIC aka Game BASIC
-============================
 
 Why Integer BASIC? As Woz famously said, for games all you need is integers, such that he sometimes refers to it as Game BASIC.
 
