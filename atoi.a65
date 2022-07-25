@@ -22,26 +22,66 @@
         StoreImm $e000, r1  ; 0.500 + 0.250 + 0.125 = 0.8750
         jsr FPPUSH
         ;jsr PrFP32
-        PrintNewline
+
+        ; test PrFP32 to 8 decimal places instead of 4
+        StoreImm $0005, r0  ; 5
+        StoreImm $0001, r1  ; 1/2^16
+        jsr FPPUSH
 
         jsr FPSTACK
         PrintNewline
 
-        ; test atoi
-        LoadAddress S1          ; +123.456 to r0
-        jsr atoi
-        jsr FPSTACK
+        jsr PrFP32      ; peeks 5.
         PrintNewline
-        jsr PULL
+        PrintNewline
+
+        jsr FPPULL      ; drop 5. == peeks 4.
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+
+        jsr FPSTACK     ; starts with 4.
+        PrintNewline
+
+        ; debug PrDec16 fills 5 places with '0'
+        ;       PrDec16L1 needs to fill 4 places with '0'
+        StoreImm $001f, r0  ; 31
+        jsr PUSH       
+        ;ldy #6 
+        ;jsr PrDec16Lp1
+        ldy #48
+        jsr PrDec16
+        PrintNewline
+        PrintNewline
+
+        ;
+        ; test atofp
+        ;
+        LoadAddress S1          ; fixed-point string to r0
+        jsr atofp
+        ;jsr FPSTACK
+        ;PrintNewline
+        jsr FPPEEK
         ;ldy #48                 ; pad = '0'
         ldy #0
         jsr PrSgnDec16
         PrintNewline
         PrintNewline
 
+        jsr FPSTACK
+        PrintNewline
+
+        StoreImm $e0e0, r0      ; 57568.87841796
+        StoreImm $e0e0, r1
+        jsr FPPUSH
+        jsr PrFP32
+
         rts
 
-S1:     .asciiz "+123.456"
+;S1:     .asciiz "+123.456"
+S1:     .asciiz "-123.456"
+;S1:     .asciiz "-12345"
+
 BUFFER:
 
 .include "./includes/io.a65"

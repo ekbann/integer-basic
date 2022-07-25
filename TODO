@@ -1,15 +1,17 @@
+PrFP32: maybe convert it to print from r0/r1 like PrDec16 prints from r0 (but copies to r11)
+
 UNIT: loop1
-    PRINT does not terminate with LF/CR.
+    PRINT does not terminate with LF/CR when using ',' separator.
 
 UNIT: assignment
     variable "A" crashes ca65 assembler, conflict with cc65 macros
     cc65 treats "A" as accumulator, need to rename variables as "var_A"
+    "Use of identifiers consisting of a single character will not work in all cases, because some of these identifiers are reserved keywords (for example "A" is not a valid identifier for a label, because it is the keyword for the accumulator)."
 
-+ Need to print FPTEMP from 4 bytes to 8 bytes(?). YES
++ Need to print FPTEMP from 4 bytes to 8 bytes(?). YES, NO new algo doesnt need
 + Check functions that uses FPTEMP now using 8 bytes.
 + Verify if Q16.16 needs 64-bit temp storage. YES
 + learn to compile a library and only add used functions to the final code.
-DONE + PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.
 
 CONVERT MANTISSA Q16.16 ==> .16 part to INTEGER ==> PrDec16
 		PUSH mantissa (16-bit) as an integer
@@ -59,9 +61,21 @@ Add .B suffix for unsigned byte (normal VAR is 16-bit)
 Add ADD8(), SUB8(), MUL8() and DIV8() for .B
 Add support for hexadecimals $ff5c
 BASIC V2 commands: CHR$,GET,TIME,ASC
+Add FP command to run BASIC in SIGNED Q16.16 FIXED-POINT MODE otherwise runs in SIGNED 16-bit INTEGER MODE
 
-Fixme:
-======
+=====
+FIXME
+=====
 DIM: Re-dimension of a pre-existing A$; memory problems
 
+====
+DONE
+====
 
+DONE: URGENT: PrDec16 pads with 5 '0' which breaks PrFP32 because it needs '0000' and '0000'
+        and PrDec16Lp1 does NOT work as it should... ldy #6 ==> 4 digits
+        call PrDec16 but changing line 3 to:
+                LDY #6			; Offset to powers of ten
+        works!!! prints decimal with 4 places padding with '0'. WHY?
+
+DONE: PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.

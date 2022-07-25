@@ -194,15 +194,16 @@ PrSgnDec16L1:
 ;           .Y = pad character
 ;           (e.g. '0' #48 or ' ' #32 or #0 for none)
 ;
-; INPUT:    at PrDec16Lp1
+; INPUT:    at PrDec16Lp
 ;           Y=(number of digits)*2-2, e.g. 8 for 5 digits
 ;
 ; OUTPUT:   A,X,Y corrupted
 ;-----------------------------------------------------------------
 PrDec16:
 	    STY pad			; Save new padding character
-	    MoveW r0, r11
-            LDY #8			; Offset to powers of ten
+        LDY #8			; Offset to powers of ten
+PrDec16Lp:				; .Y=number of digits to print
+	    MoveW r0, r11	; Uses default '0' padding when less then 5 digits
 PrDec16Lp1:
             LDX #$FF			; Start with digit=-1
             SEC
@@ -243,7 +244,8 @@ PrDec16Tens:
             .word 100
             .word 1000
             .word 10000
-pad:	    .byte 0			; default 0 = no padding
+;pad:	    .byte 0			; default 0 = no padding
+pad:	    .byte 48			; default 48 = '0'
 
 ; ***
 ; *** BETA VERSION - WORKING
@@ -273,9 +275,26 @@ PrFP32:
         sta r0L			; replaces the LSW that UMUL provides
         lda FPTEMP+3
         sta r0H	
-		ldy #0
-        jsr PrDec16		; mantissa is always UNSIGNED
+		ldy #6			; print only 4-digits, not 5!!!
+        jsr PrDec16Lp	; mantissa is always UNSIGNED (1-4 decimal places)
+
+		; repeat for the next 4 decimal places
+		lda FPTEMP		; copy the mantissa part into r0
+		sta r0L
+		lda FPTEMP+1
+		sta r0H
+		jsr PUSH		; PUSH mantissa as an integer
+		PushInt $2710	; decimal 10,000; largest that fits in 16-bit
+        jsr UMUL		; (mantissa * 10000) / (2^16) <-- just the MSW of FP
+        lda FPTEMP+2	; MSW:LSW = load MSW into current SIH/SIL
+        sta r0L			; replaces the LSW that UMUL provides
+        lda FPTEMP+3
+        sta r0H	
+		ldy #6			; print only 4-digits, not 5!!!
+        jsr PrDec16Lp		; mantissa is always UNSIGNED (5-8 decimal places)
+
         PrintNewline
+		jsr DROP		; drop the UMUL result
 		jsr DROP		; drop the UMUL result
 		plx
 		pla
@@ -422,4 +441,72 @@ gettxt:
       eor   #'0'        ;   no : CS, return orig. ASCII
 gottxt:
       rts               ;
-                        ;
+
+;
+; WIP
+;
+;-----------------------------------------------------------------
+; FUNCTION: atofp - convert ASCII text to a Q16.16 signed fixed-point.
+;			conversion splits at first non-digit char '.'
+; INPUT:    r0  - buffer pointer to ASCII text
+;			r11 - saves the string pointer
+; OUTPUT:   TOS  - signed integer value; overflows ignored
+;-----------------------------------------------------------------
+atofp:
+		pha
+		phx
+		phy
+		MoveW r0, r11	; move STRING pointer because r0 gets clobbered here
+      ldy   #0          ; init buffer pointer
+	  StoreImm $0000, r0	; zero accumulator in TOS
+	  jsr PUSH			; clobbers r0!!!
+      jsr   gettxtfp      ; grab a non-space buffer char
+      cmp   #'-'        ; leading minus sign?
+      beq   atofp2       ;   yes: set sign bit in C
+      clc               ;   no : must be positive
+      eor   #'+'        ; leading plus sign?
+      bne   atofp3       ;   no : go with an assumed '+'
+atofp2:
+      iny               ; skip over the '+' or '-' char
+atofp3:
+      php               ; save sgn (CS:'-' CC:'+'|none)
+	  ;
+	  ; NOW begins the main program to process integer:mantissa
+	  ;
+      dey               ; back up one for first getnxt
+atofp4:
+      jsr   getnxtfp      ; grab next char, CHAR/DEC returned in .A
+      bcs   atofp5       ; not a decimal digit, assume '.' and process mantissa
+	  jsr MUL10			; multiply TOS by 10
+	  sta r0L			; push digit to TOS
+	  stz r0H
+	  jsr PUSH
+      			         ; (CC is assumed from context)
+	  jsr ADD			; add it to TOS
+      bra   atofp4       ; try another digit
+atofp5:					; process mantissa after sign'ing integer
+		;jsr CHROUT		; print '.'
+      plp               ; retrieve sign
+      bcc   atofp6       ;
+	  jsr NEG			; negate if applicable
+atofp6:					; done with integer part; .A has '.' or #$00 from .asciiz
+		beq atofp7		; end-of-string #$00 encountered
+atofp7:
+		ply
+		plx
+		pla
+      rts               ;     
+                        ; string parser
+						;
+getnxtfp:
+      iny               ; bump the buffer pointer
+gettxtfp:
+      lda   (r11),y      ; grab a char from text buffer
+      cmp   #' '        ;
+      beq   getnxtfp      ; skip over any space char(s)
+      eor   #'0'        ;
+      cmp   #10         ; ASCII decimal digit?
+      bcc   gottxtfp      ;   yes: CC, convert to binary
+      eor   #'0'        ;   no : CS, return orig. ASCII
+gottxtfp:
+      rts               ;
