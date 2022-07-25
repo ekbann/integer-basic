@@ -495,7 +495,7 @@ atofp6:					; done with integer part; .A has '.' or #$00 from .asciiz
 	  jsr PUSH			; clobbers r0!!!
 atofp8:	; repeat again
       jsr   getnxtfp      ; grab next char, CHAR/DEC returned in .A
-      bcs   atofp7       ; not a decimal digit, assume EOL '0' and stop
+      bcs   atofp7       ; not a decimal digit, assume EOL '0' and stop/done
 	  jsr MUL10			; multiply TOS by 10
 	  sta r0L			; push digit to TOS
 	  stz r0H
@@ -504,6 +504,11 @@ atofp8:	; repeat again
 	  jsr ADD			; add it to TOS
       bra   atofp8       ; try another digit
 atofp7:
+		; TOS   = mantissa
+		; TOS-1 = integer
+	    ;jsr FPSTACK
+		jsr U32DIV16
+		; TOS   = signed integer:mantissa
 		ply
 		plx
 		pla

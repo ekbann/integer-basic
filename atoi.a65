@@ -77,20 +77,57 @@
         jsr PrSgnDec16          ; prints TOS which is mantissa
         PrintNewline
         PrintNewline
+        jsr FPSTACK
+        PrintNewline
         ;
         ; TOS: NEED TO CONVERT MANTISSA (INT FORM '456'='$1C8') TO .16 FORM
         ; using TOS since it is 01C8:0000
         ; udiv by $2710
         ; copy LSW to SFL/SFH === or... function leaves result in TOS as 0000:ffff
+        ;jsr U32DIV16
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+        ; integer  = -123 = $ff85 = 65413
+        ; mantissa =  456 = $1c8 ==> not really... it's '0456' when printed
+        ;
+        ; mantissa:$0000 / $2710 = $0bac ==> .04559326
+        ; 
+        ; $ff85:$0bac <== final result
+        ; 1111111110000101.00001011101011
+        ; 65413.04559326171875 ======> FIXME (Print SIGNED); fraction is incorrect with added '0'
+        ;
+        ; $01c80000 / $2710 = $bac ===> WRONG
+        ; mantissa $11d0:0000 (4560)
 
+        jsr FPSTACK
+        PrintNewline
+
+        LoadAddress S2          ; fixed-point string to r0
+        jsr atofp
+        jsr PrFP32
+        PrintNewline
+        jsr FPSTACK
+        PrintNewline
+
+        LoadAddress S3          ; fixed-point string to r0
+        jsr atofp
+        jsr PrFP32
+        PrintNewline
         jsr FPSTACK
         PrintNewline
 
         rts
 
 ;S1:     .asciiz "+123.456"
-S1:     .asciiz "-123.456"
+;S1:     .asciiz "-123.456" ; <== BUG mantissa becomes '0456'
+S1:     .asciiz "-123.4560" ; <== correct, mantissa becomes '4560'
 ;S1:     .asciiz "-12345"
+
+S2:     .asciiz "0.4000" ; ==> BUT works with less precision if cut ZEROs out... WHY?
+
+S3:     .asciiz "3.1415"
+;S3:     .asciiz "3.14159" ; ==> FAILS because "14159" overflows limit of "9999"
 
 BUFFER:
 

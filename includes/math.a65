@@ -376,6 +376,102 @@ UM8ROR:
 		pla
         	rts
 
+;
+; ### WIP
+;
+; unsigned 32-bit divide by 16-bit yielding 16-bit quotient and 16-bit remainder
+;
+; INPUT:
+; unsigned 32-bit DIVIDEND stored at top of stack as:
+;		SIH-1.SIL-1:SFH-1.SFL-1 = $aa.bb.cc.dd
+; copied to: (because .X .Y .A used in the routine; cannot index FPSP)
+;		FPTEMP: +3, +2, +1, +0
+;
+; unsigned 16-bit DIVISOR stored in r0 (r0H/r0L)
+;
+; OUTPUT:
+; 16-bit QUOTIENT result stored at SFH-1/SFL-1
+; 16-bit REMAINDER result stored at SIH-1/SIL-1
+;
+; Scratch byte = r11L
+; Carry byte for 17th bit = r11H
+;
+U32DIV16:
+		pha
+		phx
+		phy
+		; copy TOS to FPTEMP
+		ldx FPSP
+		lda SIH-1,x
+		sta FPTEMP+3
+		lda SIL-1,x
+		sta FPTEMP+2
+		lda SFH-1,x
+		sta FPTEMP+1
+		lda SFL-1,x
+		sta FPTEMP
+		; load r0 with $2710 = 10,000 decimal
+		StoreImm $2710, r0
+		;
+		SEC             ; Detect overflow or /0 condition.
+        LDA     FPTEMP+2     ; Divisor must be more than high cell of dividend.  To
+        SBC     r0L       ; find out, subtract divisor from high cell of dividend;
+        LDA     FPTEMP+3     ; if carry flag is still set at the end, the divisor was
+        SBC     r0H     ; not big enough to avoid overflow. This also takes care
+        BCS     u32d16oflo   ; of any /0 condition.  Branch if overflow or /0 error.
+                        ; We will loop 16 times; but since we shift the dividend
+        LDX     #$11    ; over at the same time as shifting the answer in, the
+                        ; operation must start AND finish with a shift of the
+                        ; low cell of the dividend (which ends up holding the
+                        ; quotient), so we start with 17 (11H) in X.
+u32d16loop:
+ 		ROL     FPTEMP     ; Move low cell of dividend left one bit, also shifting
+        ROL     FPTEMP+1     ; answer in. The 1st rotation brings in a 0, which later
+                        ; gets pushed off the other end in the last rotation.
+        DEX
+        BEQ     u32d16end    ; Branch to the end if finished.
+
+        ROL     FPTEMP+2     ; Shift high cell of dividend left one bit, also
+        ROL     FPTEMP+3     ; shifting next bit in from high bit of low cell.
+        STZ     r11H   ; Zero old bits of CARRY so subtraction works right.
+        ROL     r11H   ; Store old high bit of dividend in CARRY.  (For STZ
+                        ; one line up, NMOS 6502 will need LDA #0, STA CARRY.)
+        SEC             ; See if divisor will fit into high 17 bits of dividend
+        LDA     FPTEMP+2     ; by subtracting and then looking at carry flag.
+        SBC     r0L       ; First do low byte.
+        STA     r11L     ; Save difference low byte until we know if we need it.
+        LDA     FPTEMP+3     ;
+        SBC     r0H     ; Then do high byte.
+        TAY             ; Save difference high byte until we know if we need it.
+        LDA     r11H   ; Bit 0 of CARRY serves as 17th bit.
+        SBC     #0      ; Complete the subtraction by doing the 17th bit before
+        BCC     u32d16loop    ; determining if the divisor fit into the high 17 bits
+                        ; of the dividend.  If so, the carry flag remains set.
+        LDA     r11L     ; If divisor fit into dividend high 17 bits, update
+        STA     FPTEMP+2     ; dividend high cell to what it would be after
+        STY     FPTEMP+3     ; subtraction.
+        BRA     u32d16loop    ; Always branch.  NMOS 6502 could use BCS here.
+
+u32d16oflo:
+ 		LDA     #$FF    ; If overflow occurred, put FF
+        STA     FPTEMP+2     ; in remainder low byte
+        STA     FPTEMP+3     ; and high byte,
+        STA     FPTEMP     ; and in quotient low byte
+        STA     FPTEMP+1     ; and high byte.
+u32d16end:
+		; drop mantissa; merge FPTEMP to integer (TOS)
+		jsr FPDROP
+		ldx FPSP
+		lda FPTEMP
+		sta SFL-1,x
+		lda FPTEMP+1
+		sta SFH-1,x
+		;
+		ply
+		plx
+		pla	
+ 		RTS
+
 ; Divide (unsigned) top two numbers on stack; return rounding bit in carry
 ; ( a b -- a/b )
 ;

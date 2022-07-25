@@ -1,3 +1,14 @@
+URGENT? Function ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
+    3.14159 => "14,159" overflows the "9,999" limit
+    PrFP32 works by printing "xxxx" twice (two UMUL $2710)
+    but ATOFP needs work... reverse PrFP32 and undo twice with mantissa text processed:
+    0-4 chars = pad to 8 char string; "aaaa0000"
+    5-8 chars = pad to 8 char string; "aaaabbbb"; e.g. "14159000"
+    start undoing "bbbb" = "9000":
+        9000:0000 / 10000 = "0000:xxxx" where xxxx is the LSW for the next round
+    start undoing "aaaa" = "1415":
+        1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000 
+
 PrFP32: maybe convert it to print from r0/r1 like PrDec16 prints from r0 (but copies to r11)
 
 UNIT: loop1
@@ -8,6 +19,7 @@ UNIT: assignment
     cc65 treats "A" as accumulator, need to rename variables as "var_A"
     "Use of identifiers consisting of a single character will not work in all cases, because some of these identifiers are reserved keywords (for example "A" is not a valid identifier for a label, because it is the keyword for the accumulator)."
 
++ optimize U32DIV16: avoid copying TOS to FPTEMP and back
 + Need to print FPTEMP from 4 bytes to 8 bytes(?). YES, NO new algo doesnt need
 + Check functions that uses FPTEMP now using 8 bytes.
 + Verify if Q16.16 needs 64-bit temp storage. YES
