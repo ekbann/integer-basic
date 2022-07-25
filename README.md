@@ -4,7 +4,7 @@ Why write a 6502 compiler? I am a BIG fan of 8-bit computers such as the Commodo
 
 Why BASIC? The BASIC language is a proven and very capable programming language that has a very simple grammar. Woz said that BASIC is "not a real super structured language where you have to learn so much about the structure. It's better to learn structure from the ground up, the basic atoms. Which is what BASIC is. To learn the structure from the ground up, once you've learned it you will apply it in a structured language. Then you're ready for it." Also, it is not  hard to translate into 6502 assembly language because of its similarities like GOTO/JMP and GOSUB/JSR.
 
-Why integers? As Woz famously said, "all you need for games is integers," such that he sometimes refers to it as Game BASIC. While it can run in integer mode only (so I can beat all of the available INT benchmarks), I am adding fixed-point signed Q16.16 capability to render beautiful Mandebrot plots (initial goal; also to beat all of the available FP benchmarks as well). Adding real number mathematics is the hard part. There are no MUL or DIV on the 6502 instruction set, that means doing manual bit SHIFTs and ROTATEs manually.
+Why integers? As Woz famously said, "all you need for games is integers," such that he sometimes refers to it as Game BASIC. While it can run in integer mode only (so I can beat all of the available INT benchmarks), I am adding fixed-point signed Q16.16 capability to render beautiful Mandebrot plots (initial goal; also to beat all of the available FP benchmarks as well). Adding real number mathematics is the hard part. There are no MUL or DIV on the 6502 instruction set, that means doing bit SHIFTs and ROTATEs manually.
 
 ### IMPLEMENTATION
 
