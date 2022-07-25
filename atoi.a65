@@ -54,6 +54,16 @@
         PrintNewline
         PrintNewline
 
+        StoreImm $e0e0, r0      ; 57568.87841796
+        StoreImm $e0e0, r1
+        jsr FPPUSH
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+
+        jsr FPSTACK     ; starts with 4.
+        PrintNewline
+
         ;
         ; test atofp
         ;
@@ -64,17 +74,17 @@
         jsr FPPEEK
         ;ldy #48                 ; pad = '0'
         ldy #0
-        jsr PrSgnDec16
+        jsr PrSgnDec16          ; prints TOS which is mantissa
         PrintNewline
         PrintNewline
+        ;
+        ; TOS: NEED TO CONVERT MANTISSA (INT FORM '456'='$1C8') TO .16 FORM
+        ; using TOS since it is 01C8:0000
+        ; udiv by $2710
+        ; copy LSW to SFL/SFH === or... function leaves result in TOS as 0000:ffff
 
         jsr FPSTACK
         PrintNewline
-
-        StoreImm $e0e0, r0      ; 57568.87841796
-        StoreImm $e0e0, r1
-        jsr FPPUSH
-        jsr PrFP32
 
         rts
 

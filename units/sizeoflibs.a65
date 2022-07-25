@@ -1,0 +1,10 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+        rts
+
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
