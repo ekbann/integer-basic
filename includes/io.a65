@@ -261,7 +261,7 @@ PrFP32:
 		phx
 		jsr FPPEEK		; copy integer:mantissa to r0:r1
 		ldy #0
-		jsr PrDec16		; print integer part in r0
+		jsr PrSgnDec16		; print integer part in r0
 		lda #'.'		; print decimal point
 		jsr CHROUT		
 		lda r1L			; copy the mantissa part into r0
