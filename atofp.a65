@@ -32,6 +32,12 @@
         jsr FPSTACK
         PrintNewline
 
+        ; TEST NEW xATOFP
+        LoadAddress S3          ; fixed-point string to r0
+        jsr xatofp
+        jsr PrFP32
+        PrintNewline
+
         rts
 
 ;S1:     .asciiz "-123.456"     ; FAILS because mantissa becomes '0456'
@@ -40,6 +46,89 @@ S2:     .asciiz "3.1415"        ; WORKS because 4 decimal numbers
 S3:     .asciiz "3.14159"       ; FAILS because "14159" overflows limit of "9999"
 
 BUFFER:
+
+;
+; Fixing ATOFP
+;
+xatofp:
+	pha
+	phx
+	phy
+	MoveW r0, r11	; move STRING pointer because r0 gets clobbered here
+        ldy #0          ; init buffer pointer
+	StoreImm $0000, r0	; zero accumulator in TOS
+	jsr PUSH			; clobbers r0!!!
+        jsr xgettxtfp      ; grab a non-space buffer char
+        cmp #'-'        ; leading minus sign?
+        beq xatofp2       ;   yes: set sign bit in C
+        clc               ;   no : must be positive
+        eor #'+'        ; leading plus sign?
+        bne xatofp3       ;   no : go with an assumed '+'
+xatofp2:
+        iny               ; skip over the '+' or '-' char
+xatofp3:
+        php               ; save sgn (CS:'-' CC:'+'|none)
+	  ;
+	  ; NOW begins the main program to process integer:mantissa
+	  ;
+        dey               ; back up one for first getnxt
+xatofp4:
+        jsr xgetnxtfp      ; grab next char, CHAR/DEC returned in .A
+        bcs xatofp5       ; not a decimal digit, assume '.' and process mantissa
+	jsr MUL10			; multiply TOS by 10
+	sta r0L			; push digit to TOS
+	stz r0H
+	jsr PUSH
+      			         ; (CC is assumed from context)
+	jsr ADD			; add it to TOS
+        bra xatofp4       ; try another digit
+xatofp5:					; process mantissa after sign'ing integer
+	;jsr CHROUT		; print '.' = YEP it does!	  
+        plp               ; retrieve sign
+        bcc xatofp6       ;
+	jsr NEG			; negate if applicable
+xatofp6:				; done with integer part; .A has '.' or #$00 from .asciiz
+	beq xatofp7		; end-of-string #$00 encountered
+	StoreImm $0000, r0	; zero accumulator in TOS
+	jsr PUSH			; clobbers r0!!!
+xatofp8:	; repeat again
+        jsr xgetnxtfp      ; grab next char, CHAR/DEC returned in .A
+        bcs xatofp7       ; not a decimal digit, assume EOL '0' and stop/done
+	jsr MUL10			; multiply TOS by 10
+	sta r0L			; push digit to TOS
+	stz r0H
+	jsr PUSH
+      			         ; (CC is assumed from context)
+	jsr ADD			; add it to TOS
+        bra xatofp8       ; try another digit
+xatofp7:
+	; TOS   = mantissa
+	; TOS-1 = integer
+	;jsr FPSTACK
+	jsr U32DIV16
+	; TOS   = signed integer:mantissa
+	ply
+	plx
+	pla
+        rts
+        ;     
+        ; string parser
+	;
+xgetnxtfp:
+        iny               ; bump the buffer pointer
+xgettxtfp:
+        lda (r11),y      ; grab a char from text buffer
+        cmp #' '        ;
+        beq xgetnxtfp      ; skip over any space char(s)
+        eor #'0'        ;
+        cmp #10         ; ASCII decimal digit?
+        bcc xgottxtfp      ;   yes: CC, convert to binary
+        eor #'0'        ;   no : CS, return orig. ASCII
+xgottxtfp:
+        rts               ;
+;
+;
+;
 
 .include "./includes/io.a65"
 .include "./includes/math.a65"
