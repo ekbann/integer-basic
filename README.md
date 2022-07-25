@@ -24,6 +24,19 @@ Do NOT use single letters as variable names because it can crash the compiler:
 
 "Use of identifiers consisting of a single character will not work in all cases, because some of these identifiers are reserved keywords (for example "A" is not a valid identifier for a label, because it is the keyword for the accumulator)."
 
+### HOW-TO
+
+STEP 1: Compile BASIC program to 6502 assembly code
+
+```./basic.py program.bas```
+    -> generates program.a65
+
+STEP 2: Assemble A65 source to 6502 machine code using ca65
+
+```./make.sh program.a65```
+    -> generates program.prg
+    -> executes x16
+
 ### TECH NOTES
 
 Signed Fixed-Point Q16.16
@@ -31,7 +44,6 @@ Signed Fixed-Point Q16.16
 Precision: The value of the least significant bit, and therefore the precision of the number, is determined by the number of fractional bits. A fixed-point value can be represented to within half of the precision of its data type and scaling. The term resolution is sometimes used as a synonym for this definition. For example, a fixed-point representation with sixteen bits to the right of the binary point has a precision of $2^{-16}$ or 0.00001526, which is the value of its least significant bit. Any number within the range of this data type and scaling can be represented to within ${2^{-16} \over 2}$ or 0.000007629, which is half the precision. This is an example of representing a number with finite precision.
 
 ### OBS
-
 
 * TAB x where x=1-40 same as HTAB (AS)
 * VTAB x where x=1-24
