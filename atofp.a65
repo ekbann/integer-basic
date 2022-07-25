@@ -1,0 +1,46 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+        PrintNewline
+
+        ; FIX: print SIGNED integer part in PrFP32
+        LoadAddress S1          ; fixed-point string to r0
+        jsr atofp
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+
+        jsr FPSTACK
+        PrintNewline
+
+        LoadAddress S2          ; fixed-point string to r0
+        jsr atofp
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+
+        jsr FPSTACK
+        PrintNewline
+
+        ; FIX: pad/truncate mantissa part to 8 chars padded with '0'
+        LoadAddress S3          ; fixed-point string to r0
+        jsr atofp
+        jsr PrFP32
+        PrintNewline
+        PrintNewline
+
+        jsr FPSTACK
+        PrintNewline
+
+        rts
+
+;S1:     .asciiz "-123.456"     ; FAILS because mantissa becomes '0456'
+S1:     .asciiz "-123.4560"     ; WORKS correctly, mantissa becomes '4560'
+S2:     .asciiz "3.1415"        ; WORKS because 4 decimal numbers
+S3:     .asciiz "3.14159"       ; FAILS because "14159" overflows limit of "9999"
+
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
