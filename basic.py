@@ -532,10 +532,11 @@ if compile_program:
 
     print('\n.include \"./includes/io.a65\"')
     print('.include \"./includes/math.a65\"')
+    print('.include \"./includes/mathfp.a65\"')
 
     sys.stdout = original_stdout    # Reset the standard output to its original value
     f.close()
-    print(sys.argv[0] + ": compilation completed successfully.")
+    print(sys.argv[0] + ": compiled successfully")
 else:
-    print(sys.argv[0] + ": no compilation performed.")
+    print(sys.argv[0] + ": no compilation performed")
 exit(0)

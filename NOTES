@@ -126,3 +126,77 @@ Error message strings. Last character has high bit unset:
         "?"
 
 FP routines in ROM at locations $f425-f4fb and $f63d-f65d. Source code in Apple II Manual.
+
+## LO-RES GRAPHICS
+
+COLOR	NAME			PETSCII CODE/CHR$(X)
+0	Black			144	$90
+1	White			5	$05
+2	Red			28	$1c
+3	Cyan			159	$9f
+4	Purple			156	$9c
+5	Green			30	$1e
+6	Blue			31	$1f
+7	Yellow			158	$9e
+8	Orange			129	$81
+9	Brown			149	$95
+A	Light Red		150	$96
+B	Dark Grey		151	$97
+C	Grey			152	$98
+D	Light Green		153	$99
+E	Light Blue		154	$9a
+F	Light Grey		155	$9b
+
+COLOR <color code>
+<color code> = $<BG nibble><FG nibble>
+E.g.	COLOR $14 is BLUE on WHITE
+	COLOR $41 is default WHITE on BLUE
+
+Textmode, either 80x60 or 40x30, you can use the screen_set_mode call.
+
+Modes
+The editor's default mode is 80x60 text mode. The following text mode resolutions are supported:
+
+Mode	Description
+$00	80x60 text
+$01	80x30 text
+$02	40x60 text
+$03	40x30 text
+$04	40x15 text
+$05	20x30 text
+$06	20x15 text
+$80	320x200@256c/40x25 text
+
+Mode $80 contains two layers: a text layer on top of a graphics screen. In this mode, text color 0 is translucent instead of black.
+
+To switch modes, use the BASIC statement SCREEN or the KERNAL API screen_mode. In BASIC, the F4 key toggles between modes 0 (80x60) and 3 (40x30).
+
+$FF5F: screen_mode - get/set screen mode
+
+Function Name: screen_mode
+Purpose: Get/Set the screen mode
+Call address: $FF5F
+Communication registers: .A, .X, .Y, .C
+Preparatory routines: None
+Error returns: .C = 1 in case of error
+Stack requirements: 4
+Registers affected: .A, .X, .Y
+
+Description: If .C is set, a call to this routine gets the current screen mode in .A, the width (in tiles) of the screen in .X, and the height (in tiles) of the screen in .Y. If .C is clear, it sets the current screen mode to the value in .A. For a list of possible values, see the basic statement SCREEN. If the mode is unsupported, .C will be set, otherwise cleared.
+
+EXAMPLE:
+
+LDA #$80
+CLC
+JSR screen_mode ; SET 320x200@256C MODE
+BCS FAILURE
+
+===
+Function Name: console_put_char
+Signature: void console_put_char(byte char: .a, bool wrapping: .c);
+Purpose: Print a character to the console.
+Call address: $FEDE
+
+Description: This function prints a character to the console. The .C flag specifies whether text should be wrapped at character (.C=0) or word (.C=1) boundaries. In the latter case, characters will be buffered until a SPACE, CR or LF character is sent, so make sure the text that is printed always ends in one of these characters.
+
+Note: If the bottom of the screen is reached, this function will scroll its contents up to make extra room.

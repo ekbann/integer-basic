@@ -1,0 +1,32 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+screen_mode = $ff5f
+
+L10:	; REM HELLO
+
+		LDA #$03	; SCREEN MODE 3, 40x30
+		CLC
+		JSR screen_mode
+		BCS FAILURE
+
+		lda #$81	; SET FOREGROUND COLOR TO ORANGE
+		jsr CHROUT
+		lda #$01	; SWAP FOREGROUND- AND BACKGROUND COLOR
+		jsr CHROUT
+		lda #$1f	; SET FOREGROUND COLOR TO BLUE
+		jsr CHROUT
+
+L20:	LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+
+FAILURE:
+L30:	rts
+
+S0:		.asciiz "this text is blue on orange background"
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"

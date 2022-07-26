@@ -1,0 +1,15 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM HELLO
+L20:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L30:		rts
+
+S0:		.asciiz "hello, world!"
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
