@@ -1,14 +1,3 @@
-URGENT: ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
-    3.14159 => "14,159" overflows the "9,999" limit
-    PrFP32 works by printing "xxxx" twice (two UMUL $2710)
-    but ATOFP needs work... reverse PrFP32 and undo twice with mantissa text processed:
-    0-4 chars = pad to 8 char string; "aaaa0000"
-    5-8 chars = pad to 8 char string; "aaaabbbb"; e.g. "14159000"
-    start undoing "bbbb" = "9000":
-        9000:0000 / 10000 = "0000:xxxx" where xxxx is the LSW for the next round
-    start undoing "aaaa" = "1415":
-        1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000
-
 U32DIV16: .Y is used for temporary byte storage.
     use a memory location instead and use .Y (or .X) for FPSP index == smaller code
 
@@ -95,3 +84,14 @@ DONE: CONVERT MANTISSA Q16.16 ==> .16 part to INTEGER ==> PrDec16
         jsr UMUL	; (mantissa * 10000) / (2^16) <-- just the MSW of FP
         mantissa is always UNSIGNED
         REPEAT to extend 4 decimals '9999' to 8 decimals '99999999'
+
+DONE: ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
+    3.14159 => "14,159" overflows the "9,999" limit
+    PrFP32 works by printing "xxxx" twice (two UMUL $2710)
+    but ATOFP needs work... reverse PrFP32 and undo twice with mantissa text processed:
+    0-4 chars = pad to 8 char string; "aaaa0000"
+    5-8 chars = pad to 8 char string; "aaaabbbb"; e.g. "14159000"
+    start undoing "bbbb" = "9000":
+        9000:0000 / 10000 = "0000:xxxx" where xxxx is the LSW for the next round
+    start undoing "aaaa" = "1415":
+        1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000

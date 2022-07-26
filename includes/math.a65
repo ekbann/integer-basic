@@ -380,6 +380,7 @@ UM8ROR:
 ; ### WIP
 ;
 ; unsigned 32-bit divide by 16-bit yielding 16-bit quotient and 16-bit remainder
+; this function divides by a constant $2710 = 10,000
 ;
 ; INPUT:
 ; unsigned 32-bit DIVIDEND stored at top of stack as:
