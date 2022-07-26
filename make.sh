@@ -1,5 +1,6 @@
 #!/bin/zsh -i
-# interactive shell to expand shell alias
+# -i interactive shell to expand shell alias
+
 name=`echo $1 | cut -f 1 -d '.'`
 prg="${name}.prg"
 set -x	# echo on, and expand variables
