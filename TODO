@@ -1,5 +1,6 @@
 U32DIV16: .Y is used for temporary byte storage.
     use a memory location instead and use .Y (or .X) for FPSP index == smaller code
+    + optimize U32DIV16: avoid copying TOS to FPTEMP and back
 
 PrFP32: maybe convert it to print from r0/r1 like PrDec16 prints from r0 (but copies to r11)
 
@@ -11,25 +12,12 @@ UNIT: assignment
     cc65 treats "A" as accumulator, need to rename variables as "var_A"
     "Use of identifiers consisting of a single character will not work in all cases, because some of these identifiers are reserved keywords (for example "A" is not a valid identifier for a label, because it is the keyword for the accumulator)."
 
-+ optimize U32DIV16: avoid copying TOS to FPTEMP and back
-+ Need to print FPTEMP from 4 bytes to 8 bytes(?). YES, NO new algo doesnt need
-+ Check functions that uses FPTEMP now using 8 bytes.
-+ Verify if Q16.16 needs 64-bit temp storage. YES
 + learn to compile a library and only add used functions to the final code.
 
-CONVERT ASCII MANTISSA ==> to .16 part
-        ASCII to UNSIGNED INTEGER (normal ATOI)
-        Copy mantissa INT to SIL/SIH, zero SFL/SFH == ffff:0000 (32-bit) use FPTEMP
-        UDIV by $2710
-        Copy LSW (least significant WORD) to SFL/SFH
-        therefore... NEED 32-bit DIV 16-bit == 16-bit RESULT
-
 FPMUL32
-FP (32-bit) x FP (32-bit) = 64-bit FPTEMP ==> 8 bytes
+FP (32-bit) x FP (32-bit) = 64-bit FPTEMP ==> 8 bytes (really need 8 bytes?)
 iiii.ffff x iiii.ffff = aaaa.bbbb:cccc.cccc
 result = bbbb:cccc
-
-FPDIV32
 
 === from intro remarks ===
 
@@ -85,6 +73,13 @@ DONE: CONVERT MANTISSA Q16.16 ==> .16 part to INTEGER ==> PrDec16
         mantissa is always UNSIGNED
         REPEAT to extend 4 decimals '9999' to 8 decimals '99999999'
 
+DONE:   CONVERT ASCII MANTISSA ==> to .16 part
+        ASCII to UNSIGNED INTEGER (normal ATOI)
+        Copy mantissa INT to SIL/SIH, zero SFL/SFH == ffff:0000 (32-bit) use FPTEMP
+        UDIV by $2710
+        Copy LSW (least significant WORD) to SFL/SFH
+        therefore... NEED 32-bit DIV 16-bit == 16-bit RESULT
+
 DONE: ATOFP is buggy because it can only process 4 digits in the mantissa at a time!
     3.14159 => "14,159" overflows the "9,999" limit
     PrFP32 works by printing "xxxx" twice (two UMUL $2710)
@@ -95,3 +90,7 @@ DONE: ATOFP is buggy because it can only process 4 digits in the mantissa at a t
         9000:0000 / 10000 = "0000:xxxx" where xxxx is the LSW for the next round
     start undoing "aaaa" = "1415":
         1415:xxxx / 10000 = "0000:yyyy" where yyyy is the ORIGINAL mantissa for .14159000
+
+DONE:   Need to print FPTEMP from 4 bytes to 8 bytes(?). NO, algo doesnt need
+        Verify if Q16.16 needs 64-bit temp storage. NO
+
