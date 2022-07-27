@@ -1,0 +1,22 @@
+; Graphics Routines (LO-RES)
+;
+
+; COLOR TABLE
+;
+GRCOLORS:
+    .byte   $90     ; Black
+    .byte   $05     ; White
+    .byte   $1c     ; Red
+    .byte   $9f     ; Cyan
+    .byte   $9c     ; Purple
+    .byte   $1e     ; Green
+    .byte   $1f     ; Blue
+    .byte   $9e     ; Yellow
+    .byte   $81     ; Orange
+    .byte   $95     ; Brown
+    .byte   $96     ; Light Red
+    .byte   $97     ; Dark Grey
+    .byte   $98     ; Grey
+    .byte   $99     ; Light Green
+    .byte   $9a     ; Light Blue
+    .byte   $9b     ; Light Grey

@@ -1,3 +1,12 @@
+Create new basic_header.a65 that runs a TIMER:
+    10 PRINT INITIAL TIME
+    20 CALL 2064
+    30 PRINT FINAL TIME
+    40 PRINT ELAPSED TIME
+    <6502 CODE>
+
+SETCOLOR: New BASIC command to change the 16-color palette
+
 U32DIV16: .Y is used for temporary byte storage.
     use a memory location instead and use .Y (or .X) for FPSP index == smaller code
     + optimize U32DIV16: avoid copying TOS to FPTEMP and back

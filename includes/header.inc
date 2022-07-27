@@ -1,5 +1,6 @@
 .FEATURE dollar_in_identifiers
 
+screen_mode	= $ff5f
 CHROUT		= $FFD2
 PLOT		= $FFF0
 NEWLINE		= $0D

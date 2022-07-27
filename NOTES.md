@@ -152,6 +152,13 @@ COLOR <color code>
 E.g.	COLOR $14 is BLUE on WHITE
 	COLOR $41 is default WHITE on BLUE
 
+You can use PETSCII codes to set both background and foreground color:
+
+10 PRINT CHR$($81):REM SET FOREGROUND COLOR TO ORANGE
+20 PRINT CHR$($01):REM SWAP FOREGROUND- AND BACKGROUND COLOR
+30 PRINT CHR$($1F):REM SET FOREGROUND COLOR TO BLUE
+40 PRINT "THIS TEXT IS BLUE ON ORANGE BACKGROUND"
+
 Textmode, either 80x60 or 40x30, you can use the screen_set_mode call.
 
 Modes

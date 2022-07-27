@@ -262,6 +262,43 @@ def compile(t):
             print("\t\tjsr CHROUT")
 
         ###
+        ### GR
+        ###
+        elif t.data == 'gr':
+            # Set 40x30 mode
+            print("\t\tlda #$03\t\t; SCREEN MODE 3, 40x30")
+            print("\t\tclc")
+            print("\t\tjsr screen_mode")
+            #print("BCS FAILURE") ==> No check for failures
+            # Set black background color
+            print("\t\tlda #$90\t\t; SET FOREGROUND COLOR TO BLACK")
+            print("\t\tjsr CHROUT")
+            print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+            print("\t\tjsr CHROUT")
+            # Clear screen to black
+            print("\t\tlda #HOME")
+            print("\t\tjsr CHROUT")
+
+        ###
+        ### COLOR
+        ###
+        elif t.data == 'color':
+            if t.children[0].type == 'INT':
+                grcol = t.children[0].value
+            # Set black background color
+            #
+            # check valid color [0-15]; if fail, JSR ERROR with message on .A
+            #
+            print("\t\tldx #" + grcol)
+            print("\t\tlda GRCOLORS,x\t\t; SET FOREGROUND COLOR")
+            print("\t\tjsr CHROUT")
+            print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+            print("\t\tjsr CHROUT")
+            #
+            # IMPLEMENT <expression> ASSIGNMENT AS DONE IN TAB
+            #            
+
+        ###
         ### END
         ###
         elif t.data == 'end':                           
@@ -533,6 +570,7 @@ if compile_program:
     print('\n.include \"./includes/io.a65\"')
     print('.include \"./includes/math.a65\"')
     print('.include \"./includes/mathfp.a65\"')
+    print('.include \"./includes/graphics.a65\"')
 
     sys.stdout = original_stdout    # Reset the standard output to its original value
     f.close()
