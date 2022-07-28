@@ -11,14 +11,33 @@ L10:		lda #$03		; SCREEN MODE 3, 40x30
 		lda #HOME
 		jsr CHROUT
 		; REM SCREEN MODE 3 40X30
+L12:		ldx #7
+		lda GRCOLORS,x		; SET FOREGROUND COLOR
+		jsr CHROUT
+		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
+		jsr CHROUT
+		; REM YELLOW
+L14:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
 L20:		ldx #2
 		lda GRCOLORS,x		; SET FOREGROUND COLOR
 		jsr CHROUT
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 		; REM RED
+L25:		sec
+		jsr PLOT
+		ldy #9
+		clc
+		jsr PLOT
+		sec
+		jsr PLOT
+		ldx #10
+		clc
+		jsr PLOT
 L30:		; REM PLOT 20,15
-L35:		LoadAddress S0		; to r0
+L35:		LoadAddress S1		; to r0
 		jsr PrString
 		PrintNewline
 L36:		ldx #5
@@ -27,13 +46,24 @@ L36:		ldx #5
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 		; REM GREEN
-L37:		LoadAddress S1		; to r0
+L37:		sec
+		jsr PLOT
+		ldy #19
+		clc
+		jsr PLOT
+		sec
+		jsr PLOT
+		ldx #20
+		clc
+		jsr PLOT
+L38:		LoadAddress S2		; to r0
 		jsr PrString
 		PrintNewline
 L40:		rts
 
-S0:		.asciiz "red background"
-S1:		.asciiz "green background"
+S0:		.asciiz " "
+S1:		.asciiz " "
+S2:		.asciiz " "
 BUFFER:
 
 .include "./includes/io.a65"

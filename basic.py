@@ -119,6 +119,7 @@ basic_grammar = """
               | "POKE" expression "," expression -> poke
               | "TAB" expression -> tab
               | "VTAB" expression -> vtab
+              | "LOCATE" expression "," expression -> locate
               | "DIM" (VAR_ID | STR_ID) "(" expression ")" [("," ID "(" expression ")")*] -> dim
               | "INPUT" [STRING ","] ID [("," ID)*] -> input
               | ("PRINT" | "?") (expression (PRINT_OP expression?)*)? -> print
