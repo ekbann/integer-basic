@@ -64,33 +64,33 @@ result = bbbb:cccc
 ### CHECK IF I FINISHED THE FUNCTIONS BELOW:
 
 ```
-> MUL8(): 8-bit integer multiplication, result is 2-bytes
-> DIV8(): 8-bit integer division, result is 2-bytes
-> MOD8(): 8-bit integer modulo, result is 2-bytes
-> MUL() : 32-bit fixed-point multiplication (Woz's) 4-bytes, 16-bit:16-bit
-> DIV() : 32-bit fixed-point division (Woz's) 4-bytes, 16-bit:16-bit
-> FMUL(): 32-bit floating-point multiplication (Woz's) 4-bytes
-> FDIV(): 32-bit floating-point division (Woz's) 4-bytes
-> LOG,LN,ATN,COS,SIN,SQR,TAN,PI
->         (add all these to a math library on 8K HIGH RAM)
-> >>  : bitwise operator right shift 
-> <<  : bitwise operator left shift
-> &   : bitwise operator AND
-> |   : bitwise operator OR
-> ^   : bitwise operator XOR
-> ~   : bitwise operator NOT
-> !   : ??
-> #   : NOT EQUAL
-> !=  : NOT EQUAL
-> ++
-> 
-> Add Zero Page variables
-> Add r0-r15 16-bit registers
-> Add .B suffix for unsigned byte (normal VAR is 16-bit)
-> Add ADD8(), SUB8(), MUL8() and DIV8() for .B
-> Add support for hexadecimals $ff5c
-> BASIC V2 commands: CHR$,GET,TIME,ASC
-> Add FP command to run BASIC in SIGNED Q16.16 FIXED-POINT MODE otherwise runs in SIGNED 16-bit INTEGER MODE
+MUL8(): 8-bit integer multiplication, result is 2-bytes
+DIV8(): 8-bit integer division, result is 2-bytes
+MOD8(): 8-bit integer modulo, result is 2-bytes
+MUL() : 32-bit fixed-point multiplication (Woz's) 4-bytes, 16-bit:16-bit
+DIV() : 32-bit fixed-point division (Woz's) 4-bytes, 16-bit:16-bit
+FMUL(): 32-bit floating-point multiplication (Woz's) 4-bytes
+FDIV(): 32-bit floating-point division (Woz's) 4-bytes
+LOG,LN,ATN,COS,SIN,SQR,TAN,PI
+        (add all these to a math library on 8K HIGH RAM)
+>>  : bitwise operator right shift 
+<<  : bitwise operator left shift
+&   : bitwise operator AND
+|   : bitwise operator OR
+^   : bitwise operator XOR
+~   : bitwise operator NOT
+!   : ??
+#   : NOT EQUAL
+!=  : NOT EQUAL
+++
+
+Add Zero Page variables
+Add r0-r15 16-bit registers
+Add .B suffix for unsigned byte (normal VAR is 16-bit)
+Add ADD8(), SUB8(), MUL8() and DIV8() for .B
+Add support for hexadecimals $ff5c
+BASIC V2 commands: CHR$,GET,TIME,ASC
+Add FP command to run BASIC in SIGNED Q16.16 FIXED-POINT MODE otherwise runs in SIGNED 16-bit INTEGER MODE
 ```
 
 ### DONE
@@ -101,7 +101,8 @@ DONE: URGENT: PrDec16 pads with 5 '0' which breaks PrFP32 because it needs '0000
 ```
                 LDY #6			; Offset to powers of ten
 ```
-        works!!! prints decimal with 4 places padding with '0'. WHY?
+
+works!!! prints decimal with 4 places padding with '0'. WHY?
 
 DONE: PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.
 
