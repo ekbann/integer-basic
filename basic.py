@@ -300,6 +300,34 @@ def compile(t):
             #            
 
         ###
+        ### PLOT x,y ==> col, row
+        ###
+        elif t.data == 'plot':
+            compile(t.children[0])
+            compile(t.children[1])
+            print("\t\tjsr PULL")
+            print("\t\tldx r0L\t\t; row")
+            print("\t\tjsr PULL")
+            print("\t\tldy r0L\t\t; col")
+            print("\t\tclc\t\t; set cursor position")
+            print("\t\tjsr PLOT")
+            print("\t\tlda #32\t\t; space char")
+            print("\t\tjsr CHROUT")
+
+        ###
+        ### LOCATE row, col
+        ###
+        elif t.data == 'locate':
+            compile(t.children[0])
+            compile(t.children[1])
+            print("\t\tjsr PULL")
+            print("\t\tldy r0L\t\t; col")
+            print("\t\tjsr PULL")
+            print("\t\tldx r0L\t\t; row")
+            print("\t\tclc\t\t; set cursor position")
+            print("\t\tjsr PLOT")
+
+        ###
         ### END
         ###
         elif t.data == 'end':                           

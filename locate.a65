@@ -1,0 +1,38 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM LOCATE ROW,COLUMN UNIT TEST
+L20:		lda #HOME
+		jsr CHROUT
+L30:		PushInt 5
+		PushInt 20
+		jsr PULL
+		ldy r0L		; col
+		jsr PULL
+		ldx r0L		; row
+		clc		; set cursor position
+		jsr PLOT
+L40:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L50:		PushInt 20
+		PushInt 5
+		jsr PULL
+		ldy r0L		; col
+		jsr PULL
+		ldx r0L		; row
+		clc		; set cursor position
+		jsr PLOT
+L60:		LoadAddress S1		; to r0
+		jsr PrString
+		PrintNewline
+L70:		rts
+
+S0:		.asciiz "r:5,c:20"
+S1:		.asciiz "r:20,c:5"
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"
