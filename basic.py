@@ -284,20 +284,39 @@ def compile(t):
         ### COLOR
         ###
         elif t.data == 'color':
-            if t.children[0].type == 'INT':
-                grcol = t.children[0].value
-            # Set black background color
-            #
-            # check valid color [0-15]; if fail, JSR ERROR with message on .A
-            #
-            print("\t\tldx #" + grcol)
-            print("\t\tlda GRCOLORS,x\t\t; SET FOREGROUND COLOR")
-            print("\t\tjsr CHROUT")
-            print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
-            print("\t\tjsr CHROUT")
-            #
-            # IMPLEMENT <expression> ASSIGNMENT AS DONE IN TAB
-            #            
+            #print(t.children[0])
+            if isinstance(t.children[0], Token):            # direct set, does not use STACK
+                if t.children[0].type == 'INT':
+                    grcol = t.children[0].value
+                    # Set black background color
+                    #
+                    # check valid color [0-15]; if fail, JSR ERROR with message on .A
+                    #
+                    print("\t\tldx #" + grcol)
+                    print("\t\tlda GRCOLORS,x\t\t; SET FOREGROUND COLOR")
+                    print("\t\tjsr CHROUT")
+                    print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+                    print("\t\tjsr CHROUT")
+                elif t.children[0].type == 'VAR_ID':        # not INT, check for VAR_ID
+#                    print("\t\tPushVar " + t.children[0].value) # load low byte of VAR_ID
+#                    print("\t\tjsr PULL")
+                    print("\t\tldx " + t.children[0].value) # OPTIMIZATION: avoids PushVAR/PULL
+#                    print("\t\tldx r0L")
+                    print("\t\tlda GRCOLORS,x\t\t; SET FOREGROUND COLOR")
+                    print("\t\tjsr CHROUT")
+                    print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+                    print("\t\tjsr CHROUT")
+                else:
+                    print("*** COLOR error, encountered: " + t.children[0])
+                    exit()
+            else:                                           # <expression>, need to get result from stack
+                compile(t.children[0])
+                print("\t\tjsr PULL")                       # set using STACK value
+                print("\t\tldx r0L")                        # uses only low byte, does not check boundary
+                print("\t\tlda GRCOLORS,x\t\t; SET FOREGROUND COLOR")
+                print("\t\tjsr CHROUT")
+                print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+                print("\t\tjsr CHROUT")
 
         ###
         ### PLOT x,y ==> col, row
@@ -468,7 +487,7 @@ def compile(t):
                     print("\t\tldy #" + str(col))
                     print("\t\tclc")                        # SET cursor position with new COL
                     print("\t\tjsr PLOT")
-                elif t.children[0].type == 'VAR_ID':                                       # not INT, check for VAR_ID
+                elif t.children[0].type == 'VAR_ID':        # not INT, check for VAR_ID
                     print("\t\tsec")                        # GET cursor position; X=ROW, Y=COL, A preserved
                     print("\t\tjsr PLOT")
                     print("\t\tldy " + t.children[0].value) # load low byte of VAR_ID

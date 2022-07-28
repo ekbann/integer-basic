@@ -1,0 +1,72 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		lda #$03		; SCREEN MODE 3, 40x30
+		clc
+		jsr screen_mode
+		lda #$90		; SET FOREGROUND COLOR TO BLACK
+		jsr CHROUT
+		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
+		jsr CHROUT
+		lda #HOME
+		jsr CHROUT
+		; REM SCREEN MODE 3 40X30
+L20:		PushInt 0
+		PullVar XX
+		PushInt 15
+		PullVar XXEND
+		PushInt 1
+		PullVar XXSTEP
+LOOP0:
+		PushVar XXEND
+		PushVar XX
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP0CONT
+		jmp LOOP0END
+LOOP0CONT:
+L30:		ldx XX
+		lda GRCOLORS,x		; SET FOREGROUND COLOR
+		jsr CHROUT
+		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
+		jsr CHROUT
+L40:		PushVar XX
+		PushInt 15
+		PushVar XX
+		jsr SUB
+		jsr PULL
+		ldx r0L		; row
+		jsr PULL
+		ldy r0L		; col
+		clc		; set cursor position
+		jsr PLOT
+		lda #32		; space char
+		jsr CHROUT
+L50:		PushVar XX
+		PushVar XX
+		jsr PULL
+		ldx r0L		; row
+		jsr PULL
+		ldy r0L		; col
+		clc		; set cursor position
+		jsr PLOT
+		lda #32		; space char
+		jsr CHROUT
+L70:		PushVar XX
+		PushVar XXSTEP
+		jsr ADD
+		PullVar XX
+		jmp LOOP0
+LOOP0END:
+L80:		rts
+
+XX:		.res 4
+XXEND:		.res 4
+XXSTEP:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"
