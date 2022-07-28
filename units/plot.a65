@@ -17,53 +17,51 @@ L12:		ldx #7
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 		; REM YELLOW
-L14:		LoadAddress S0		; to r0
-		jsr PrString
-		PrintNewline
+L14:		PushInt 0
+		PushInt 0
+		jsr PULL
+		ldx r0L		; row
+		jsr PULL
+		ldy r0L		; col
+		clc		; set cursor position
+		jsr PLOT
+		lda #32		; space char
+		jsr CHROUT
 L20:		ldx #2
 		lda GRCOLORS,x		; SET FOREGROUND COLOR
 		jsr CHROUT
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 		; REM RED
-L25:		sec
+L30:		PushInt 20
+		PushInt 10
+		jsr PULL
+		ldx r0L		; row
+		jsr PULL
+		ldy r0L		; col
+		clc		; set cursor position
 		jsr PLOT
-		ldy #9
-		clc
-		jsr PLOT
-		sec
-		jsr PLOT
-		ldx #10
-		clc
-		jsr PLOT
-L30:		; REM PLOT 20,15
-L35:		LoadAddress S1		; to r0
-		jsr PrString
-		PrintNewline
-L36:		ldx #5
+		lda #32		; space char
+		jsr CHROUT
+		; REM PLOT (X,Y) (COL,ROW)
+L40:		ldx #5
 		lda GRCOLORS,x		; SET FOREGROUND COLOR
 		jsr CHROUT
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 		; REM GREEN
-L37:		sec
+L50:		PushInt 10
+		PushInt 20
+		jsr PULL
+		ldx r0L		; row
+		jsr PULL
+		ldy r0L		; col
+		clc		; set cursor position
 		jsr PLOT
-		ldy #19
-		clc
-		jsr PLOT
-		sec
-		jsr PLOT
-		ldx #20
-		clc
-		jsr PLOT
-L38:		LoadAddress S2		; to r0
-		jsr PrString
-		PrintNewline
-L40:		rts
+		lda #32		; space char
+		jsr CHROUT
+L60:		rts
 
-S0:		.asciiz " "
-S1:		.asciiz " "
-S2:		.asciiz " "
 BUFFER:
 
 .include "./includes/io.a65"
