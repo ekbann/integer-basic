@@ -1,4 +1,5 @@
 ### FINISH VTAB FOR NON-INT CASES (LIKE TAB AND COLOR)
+### LOOP vars don't need to be 4 bytes long (32-bit)
 
 ### FIXME
 
@@ -16,12 +17,13 @@ ldy XYZ+1   ; loads .Y with hi-byte of XYZ
 ### CREATE NEW BASIC AUTORUN HEADER WITH TIMER
 
 Create new basic_header.a65 that runs a TIMER:
+```
     10 PRINT INITIAL TIME
     20 CALL 2064
     30 PRINT FINAL TIME
     40 PRINT ELAPSED TIME
     <6502 CODE>
-
+```
 ### CREATE NEW BASIC COMMAND
 
 SETCOLOR: New BASIC command to change the 16-color palette
@@ -30,7 +32,7 @@ SETCOLOR: New BASIC command to change the 16-color palette
 
 U32DIV16: .Y is used for temporary byte storage.
     use a memory location instead and use .Y (or .X) for FPSP index == smaller code
-    + optimize U32DIV16: avoid copying TOS to FPTEMP and back
+    optimize U32DIV16: avoid copying TOS to FPTEMP and back
 
 ### OPTIMIZE PrFP32 TO PULL FROM STACK
 
@@ -61,6 +63,7 @@ result = bbbb:cccc
 
 ### CHECK IF I FINISHED THE FUNCTIONS BELOW:
 
+```
 > MUL8(): 8-bit integer multiplication, result is 2-bytes
 > DIV8(): 8-bit integer division, result is 2-bytes
 > MOD8(): 8-bit integer modulo, result is 2-bytes
@@ -88,15 +91,16 @@ result = bbbb:cccc
 > Add support for hexadecimals $ff5c
 > BASIC V2 commands: CHR$,GET,TIME,ASC
 > Add FP command to run BASIC in SIGNED Q16.16 FIXED-POINT MODE otherwise runs in SIGNED 16-bit INTEGER MODE
+```
 
-====
-DONE
-====
+### DONE
 
 DONE: URGENT: PrDec16 pads with 5 '0' which breaks PrFP32 because it needs '0000' and '0000'
         and PrDec16Lp1 does NOT work as it should... ldy #6 ==> 4 digits
         call PrDec16 but changing line 3 to:
+```
                 LDY #6			; Offset to powers of ten
+```
         works!!! prints decimal with 4 places padding with '0'. WHY?
 
 DONE: PUSH needs to zero SFL/SFH to avoid FPSTACK garbage.
