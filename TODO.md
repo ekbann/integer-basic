@@ -2,11 +2,6 @@
 
 ## Fix or Finish Me
 
-(Compiler) LOOP: I cannot recycle the same loop VAR_ID because it is pre-existing in the loop-list
-                it will use the same LOOP0 labels. I should be able to use the same VAR_ID storage
-                but create new LOOPx labels. Check original SIEVE.BAS.
-            ==> NESTED LOOPS WORKS! But two consective loops causes LABEL "already defined" errors.
-
 (BASIC) VTAB: consider non-INT cases as done with TAB and COLOR
 (BASIC) DIM: add assignment `70 FLAGS(I) = 1`
 (BASIC) DIM: Re-dimension of a pre-existing A$; memory problems
@@ -186,3 +181,9 @@ L30:		PushVar XX
 		lda #$01		; SWAP FOREGROUND AND BACKGROUND COLOR
 		jsr CHROUT
 ```
+DONE: (Compiler) LOOP: I cannot recycle the same loop VAR_ID because it is pre-existing in the loop-list
+                it will use the same LOOP0 labels. I should be able to use the same VAR_ID storage
+                but create new LOOPx labels. Check original SIEVE.BAS.
+            ==> NESTED LOOPS WORKS! But two consective loops causes LABEL "already defined" errors.
+            ==> I suspect a local LOOP COUNTER which resets after recursive LOOPS
+

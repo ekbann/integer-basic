@@ -182,8 +182,9 @@ str_list = []       # list of strings to use .byte
 var_id_list = []    # list of VAR_ID
 dim_list = {}       # dictionary of STR_ID with size
 dim_ptr_list = []   # list of STR_ID without size, defined at runtime, uses pointer in BUFFER space
-#loop_count = 0
+loop_count = 0
 loop_list = []
+next_list = []
 
 ###
 ### COMPILER FUNCTION
@@ -194,8 +195,9 @@ def compile(t):
     global var_id_list  # VAR_ID
     global dim_list     # STR_ID
     global dim_ptr_list
-    #global loop_count
-    global loop_list
+    global loop_count   # loop_label = LOOP<loop_count>
+    global loop_list    # PushVar|PullVar <var_id>
+    global next_list    # jmp LOOP1 , LOOP1END: using loop_labels
     
     ###
     ### PROCESS TOKEN OBJECT = <class 'lark.lexer.Token'>
@@ -594,6 +596,7 @@ def compile(t):
         ### FOR
         ###
         elif t.data == 'for':
+            loop_count += 1
             var_name = t.children[0]
             if var_name.type == 'VAR_ID':
                 if var_name not in var_id_list:
@@ -603,9 +606,15 @@ def compile(t):
                 #if len(t.children) == 4:
                 if (var_name + "STEP") not in var_id_list:
                     var_id_list.append(var_name + "STEP")
-                loop_list.append(var_name)  # keep track for NEXT tokens
+                loop_list.append(var_name.value)  # keep track for NEXT tokens as var_name
+                #print("; ### VAR_NAME: ", var_name)
+                #print(loop_list)
                 #print(len(t.children))
-                loop_label = "LOOP" + str(len(loop_list)-1)
+                #loop_label = "LOOP" + str(len(loop_list)-1)
+                loop_label = "LOOP" + str(loop_count)
+                next_list.append(loop_label)    # keep track for NEXT tokens as label and not var_name
+                #print("; ### LOOP_LABEL: ", loop_label)
+                #print("; ### LOOP_COUNT: ", loop_count)
                 #loop_count += 1
                 #
                 # IMPLEMENT DIRECT ASSIGNMENT AS DONE IN TAB
@@ -643,9 +652,11 @@ def compile(t):
             print("\t\tPushVar " + loop_list[-1] + "STEP")
             print("\t\tjsr ADD")
             print("\t\tPullVar " + loop_list[-1])
-            print("\t\tjmp LOOP" + str(len(loop_list)-1))
-            print("LOOP" + str(len(loop_list)-1) + "END:")
+            print("\t\tjmp " + next_list[-1])
+            #print("LOOP" + str(len(loop_list)-1) + "END:")
+            print(next_list[-1] + "END:")
             del loop_list[-1]
+            del next_list[-1]
             
         ###
         ### TAB

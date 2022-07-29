@@ -1,59 +1,60 @@
 .include "./includes/macros.inc"
 .include "./includes/header.inc"
 
-L10:		; REM FOR LOOP
-L20:		PushInt 1
+L5:		; REM MULTIPLE LOOPS WITH SAME LABEL ERROR
+L60:		PushInt 1
 		PullVar I
 		PushInt 5
 		PullVar IEND
 		PushInt 1
 		PullVar ISTEP
-LOOP0:
+LOOP1:
 		PushVar IEND
 		PushVar I
-		jsr LT
-		jsr PULL
-		lda r0L
-		beq LOOP0CONT
-		jmp LOOP0END
-LOOP0CONT:
-L23:		PushInt 1
-		PullVar J
-		PushInt 3
-		PullVar JEND
-		PushInt 1
-		PullVar JSTEP
-LOOP1:
-		PushVar JEND
-		PushVar J
 		jsr LT
 		jsr PULL
 		lda r0L
 		beq LOOP1CONT
 		jmp LOOP1END
 LOOP1CONT:
-L25:		LoadAddress S0		; to r0
+L70:		LoadAddress S0		; to r0
 		jsr PrString
 		PrintNewline
-L28:		PushVar J
-		PushVar JSTEP
-		jsr ADD
-		PullVar J
-		jmp LOOP1
-LOOP1END:
-L30:		LoadAddress S1		; to r0
-		jsr PrString
-		PrintNewline
-L40:		PushVar I
+L80:		PushVar I
 		PushVar ISTEP
 		jsr ADD
 		PullVar I
-		jmp LOOP0
-LOOP0END:
-L50:		rts
+		jmp LOOP1
+LOOP1END:
+L90:		PushInt 1
+		PullVar J
+		PushInt 5
+		PullVar JEND
+		PushInt 1
+		PullVar JSTEP
+LOOP2:
+		PushVar JEND
+		PushVar J
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP2CONT
+		jmp LOOP2END
+LOOP2CONT:
+L100:		LoadAddress S1		; to r0
+		jsr PrString
+		PrintNewline
+L180:		PushVar J
+		PushVar JSTEP
+		jsr ADD
+		PullVar J
+		jmp LOOP2
+LOOP2END:
+L185:		; REM NEXT I
+L190:		rts
 
-S0:		.asciiz "inside loop"
-S1:		.asciiz "outside loop"
+S0:		.asciiz "header"
+S1:		.asciiz "==body"
 I:		.res 4
 IEND:		.res 4
 ISTEP:		.res 4
