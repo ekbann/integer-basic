@@ -1,3 +1,9 @@
+Integer BASIC is a BASIC interpreter written by Steve Wozniak for the Apple I and Apple II computers. Originally available on cassette for the Apple I in 1976, then included in ROM on the Apple II from its release in 1977, it was the first version of BASIC used by many early home computer owners.
+
+The only numeric data type was the integer; floating-point numbers were not supported. Using integers allowed numbers to be stored in a much more compact 16-bit format that could be more rapidly read and processed than the 32- or 40-bit floating-point formats found in most BASICs of the era.
+
+The language was initially developed under the name GAME BASIC and referred to simply as Apple BASIC when it was introduced on the Apple I. It became Integer BASIC when it was ported to the Apple II and shipped alongside Applesoft BASIC, a port of Microsoft BASIC which included floating-point support. Integer BASIC was phased out in favor of Applesoft BASIC starting with the Apple II Plus in 1979.
+
 Why INTEGER BASIC? Woz explains: "I wrote down a complete syntax chart of the
 commands that were in the H-P BASIC manual, and I included floating point
 arithmetic, decimal points, numbers and everything. Then I started thinking

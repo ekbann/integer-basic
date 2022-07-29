@@ -61,6 +61,7 @@ TAB does horizontal tab by printing ASCII 160
 36      | $24         | Horizontal cursor-position (0-39)
 37      | $25         | Vertical cursor-position (0-23)
 
+ ```
         ch      =       $24     ; horizontal cursor location
         ; horizontal tab
         tabout: LDA     ch
@@ -100,8 +101,11 @@ ESC       = #$9B
                 BMI     Le3d5        ; Loop if not
                 STA     DSP          ; Write display data
                 RTS                  ; and return
+```
 
 Error message strings. Last character has high bit unset:
+
+```
         ">32767"
         "TOO LONG"
         "SYNTAX"
@@ -124,12 +128,14 @@ Error message strings. Last character has high bit unset:
         "\\\n"
         "RETYPE LINE\n"
         "?"
+```
 
 FP routines in ROM at locations $f425-f4fb and $f63d-f65d. Source code in Apple II Manual.
 
 ## LO-RES GRAPHICS
 
 COLOR	NAME			PETSCII CODE/CHR$(X)
+---
 0	Black			144	$90
 1	White			5	$05
 2	Red			28	$1c
@@ -147,23 +153,30 @@ D	Light Green		153	$99
 E	Light Blue		154	$9a
 F	Light Grey		155	$9b
 
+```
 COLOR <color code>
 <color code> = $<BG nibble><FG nibble>
+```
+
 E.g.	COLOR $14 is BLUE on WHITE
 	COLOR $41 is default WHITE on BLUE
 
 You can use PETSCII codes to set both background and foreground color:
 
+```
 10 PRINT CHR$($81):REM SET FOREGROUND COLOR TO ORANGE
 20 PRINT CHR$($01):REM SWAP FOREGROUND- AND BACKGROUND COLOR
 30 PRINT CHR$($1F):REM SET FOREGROUND COLOR TO BLUE
 40 PRINT "THIS TEXT IS BLUE ON ORANGE BACKGROUND"
+```
 
 Textmode, either 80x60 or 40x30, you can use the screen_set_mode call.
 
-Modes
+Modes:
+
 The editor's default mode is 80x60 text mode. The following text mode resolutions are supported:
 
+```
 Mode	Description
 $00	80x60 text
 $01	80x30 text
@@ -173,6 +186,7 @@ $04	40x15 text
 $05	20x30 text
 $06	20x15 text
 $80	320x200@256c/40x25 text
+```
 
 Mode $80 contains two layers: a text layer on top of a graphics screen. In this mode, text color 0 is translucent instead of black.
 
@@ -193,12 +207,13 @@ Description: If .C is set, a call to this routine gets the current screen mode i
 
 EXAMPLE:
 
-LDA #$80
+```LDA #$80
 CLC
 JSR screen_mode ; SET 320x200@256C MODE
-BCS FAILURE
+BCS FAILURE```
 
-===
+---
+
 Function Name: console_put_char
 Signature: void console_put_char(byte char: .a, bool wrapping: .c);
 Purpose: Print a character to the console.
@@ -207,3 +222,47 @@ Call address: $FEDE
 Description: This function prints a character to the console. The .C flag specifies whether text should be wrapped at character (.C=0) or word (.C=1) boundaries. In the latter case, characters will be buffered until a SPACE, CR or LF character is sent, so make sure the text that is printed always ends in one of these characters.
 
 Note: If the bottom of the screen is reached, this function will scroll its contents up to make extra room.
+
+## Applesoft Colors
+
+Lo-res mode colors:
+---
+0 - black
+1 - red
+2 - dark blue
+3 - pink
+4 - dark green
+5 - dark gray
+6 - mid blue
+7 - light blue
+8 - brown
+9 - orange
+10 - light gray
+11 - apricot
+12 - light green
+13 - yellow
+14 - aqua
+15 - white
+
+The numbers in square brackets are the lores color numbers (COLOR= in
+Applesoft). The hires colors (HCOLOR= in Applesoft) are marked with an
+asterisk.
+
+NTSC Apple II Colors RGB Values in sRGB color space
+---
+R, G, B [ 0] = 0x000000 * Hires 0, 3
+R, G, B [ 1] = 0x8a2140
+R, G, B [ 2] = 0x3c22a5
+R, G, B [ 3] = 0xc847e4 * Hires 2
+R, G, B [ 4] = 0x07653e
+R, G, B [ 5] = 0x7b7e80
+R, G, B [ 6] = 0x308fe3 * Hires 6
+R, G, B [ 7] = 0xb9a9fd
+R, G, B [ 8] = 0x3b5107
+R, G, B [ 9] = 0xc77028 * Hires 5
+R, G, B [10] = 0x7b7e80
+R, G, B [11] = 0xf39ac2
+R, G, B [12] = 0x2fb81f * Hires 1
+R, G, B [13] = 0xb9d060
+R, G, B [14] = 0x6ee1c0
+R, G, B [15] = 0xf5faff * Hires 4 & 7

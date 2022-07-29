@@ -18,6 +18,8 @@ BASIC (AS) or GW-BASIC (GW):
 * LOCATE r,c (GW) : Move cursor to the specified position
 * GET (AS) : Read single key
 
+* STACK : Print the current STACK
+
 ### IMPORTANT
 
 Do NOT use single letters as variable names because it can crash the compiler:

@@ -18,39 +18,6 @@ OBS:
 TAB x where x=1-40 same as HTAB (AS)
 VTAB x where x=1-24
 POP : Convert last GOSUB into a GOTO
-
-Todo:
-=====
-MUL8(): 8-bit integer multiplication, result is 2-bytes
-DIV8(): 8-bit integer division, result is 2-bytes
-MOD8(): 8-bit integer modulo, result is 2-bytes
-MUL() : 32-bit fixed-point multiplication (Woz's) 4-bytes, 16-bit:16-bit
-DIV() : 32-bit fixed-point division (Woz's) 4-bytes, 16-bit:16-bit
-FMUL(): 32-bit floating-point multiplication (Woz's) 4-bytes
-FDIV(): 32-bit floating-point division (Woz's) 4-bytes
-LOG,LN,ATN,COS,SIN,SQR,TAN,PI
-        (add all these to a math library on 8K HIGH RAM)
->>  : bitwise operator right shift 
-<<  : bitwise operator left shift
-&   : bitwise operator AND
-|   : bitwise operator OR
-^   : bitwise operator XOR
-~   : bitwise operator NOT
-!   : ??
-#   : NOT EQUAL
-!=  : NOT EQUAL
-++
---
-Add Zero Page variables
-Add r0-r15 16-bit registers
-Add .B suffix for unsigned byte (normal VAR is 16-bit)
-Add ADD8(), SUB8(), MUL8() and DIV8() for .B
-Add support for hexadecimals $ff5c
-BASIC V2 commands: CHR$,GET,TIME,ASC
-
-Fixme:
-======
-DIM: Re-dimension of a pre-existing A$; memory problems
 """
 
 from pickle import FALSE, TRUE
@@ -110,6 +77,7 @@ basic_grammar = """
 
     ?statement: ("HOME" | "CLS") -> home
               | "END" -> end
+              | "STACK" -> stack
               | "DATA" constant [("," constant)*] -> data
               | "READ" ID [("," ID)*] -> read
               | "CALL" expression -> call
@@ -136,6 +104,7 @@ basic_grammar = """
               | "HLIN" expression "," expression "AT" expression -> hlin
               | "VLIN" expression "," expression "AT" expression -> vlin
               | STR_ID "(" INT ")" "=" (STRING | STR_ID) -> concat
+              | VAR_ID "(" expression ")" "=" expression -> dim_set
 
     ?expression: or_exp
     
@@ -162,6 +131,7 @@ basic_grammar = """
             | value
 
     ?value: (VAR_ID | STR_ID)
+          | VAR_ID "(" expression ")" -> dim_val
           | STR_ID "(" INT "," INT ")" -> substring
           | "ABS" "(" expression ")" -> abs
           | "LEN" "(" expression ")" -> len
@@ -170,7 +140,7 @@ basic_grammar = """
           | "SGN" "(" expression ")" -> sgn
           | "ASC" "(" expression ")" -> asc
           | "PDL" "(" expression ")" -> pdl
-          | "SCRN" "(" expression "," expression ")"
+          | "SCRN" "(" expression "," expression ")" -> scrn
           | constant
 
     ?constant: INT
@@ -191,6 +161,10 @@ basic_grammar = """
     %import common.WS
     %ignore WS
 """
+
+#
+# | VAR_ID "(" expression ")" "=" expression -> dim_set
+#
 
 parser = Lark(basic_grammar)
 
@@ -259,6 +233,89 @@ def compile(t):
         ### HOME
         ###
         elif t.data == 'home':                          
+            print("\t\tlda #HOME")
+            print("\t\tjsr CHROUT")
+
+        ###
+        ### STACK <== doesn't work because most time stack ends up empty.
+        ###
+        elif t.data == 'stack':                          
+            print("\t\tjsr FPSTACK")
+
+        ###
+        ### PEEK()
+        ###
+
+        ###
+        ### LEN()
+        ###
+
+        ###
+        ### ABS()
+        ###
+
+        ###
+        ### SGN()
+        ###
+
+        ###
+        ### SCRN()
+        ###
+
+        ###
+        ### ASC()
+        ###
+
+        ###
+        ### PDL()
+        ###
+
+        ###
+        ### POKE
+        ###
+
+        ###
+        ### POKE
+        ###
+
+        ###
+        ### GOTO
+        ###
+        elif t.data == 'goto':
+            #print(t.children[0])
+            if isinstance(t.children[0], Token):            # direct set, does not use STACK
+                if t.children[0].type == 'INT':             # INT, no need for stack usage
+                    col = int(t.children[0].value)          # extract LINE number
+                    print("\t\tjmp L" + str(col))           # jump to L<num>: label
+                elif t.children[0].type == 'VAR_ID':        # not INT, check for VAR_ID
+                    print("\t\tjmp " + t.children[0].value) # load low byte of VAR_ID
+                else:
+                    print("*** TAB error, encountered: " + t.children[0])
+                    exit()
+            else:                                           # <expression>, need to get result from stack
+                compile(t.children[0])
+                print("\t\tjsr PULL")                       # set using STACK value
+                print("\t\tjmp (r0)")            
+
+        ###
+        ### GOSUB
+        ###
+
+        ###
+        ### TEXT 
+        ###
+        elif t.data == 'text':
+            # Set 80x60 mode
+            print("\t\tlda #$0\t\t; SCREEN MODE 0, 80x60")
+            print("\t\tclc")
+            print("\t\tjsr screen_mode")
+            #print("BCS FAILURE") ==> No check for failures
+            # Set black background color
+            print("\t\tlda #$90\t\t; SET FOREGROUND COLOR TO BLACK")
+            print("\t\tjsr CHROUT")
+            print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+            print("\t\tjsr CHROUT")
+            # Clear screen to black
             print("\t\tlda #HOME")
             print("\t\tjsr CHROUT")
 
@@ -360,21 +417,137 @@ def compile(t):
             print("\t\tjsr ABS")
 
         ###
-        ### DIM
+        ### DIM VAL => VAR_ID(<expr>)
+        ###
+        elif t.data == 'dim_val':
+            dim_name = t.children[0]
+            #print(dim_name)
+            if dim_name not in dim_list:
+                print('*** DIM ERR')
+                print("Error: DIM undeclared")
+                exit()
+            if isinstance(t.children[1], Token):
+                if t.children[1].type == 'INT':             # INT, no need for stack usage
+                    dim_index = t.children[1]
+
+                    print("\t\tPushInt " + dim_index)
+                    print("\t\tjsr MUL2")                   # each element is 2-bytes wide
+                    print("\t\tLoadAddress " + dim_name)    # add DIM memory address
+                    print("\t\tjsr PUSH")
+                    print("\t\tjsr ADD")        # element address (TOS) = base_address + array_index
+                    print("\t\tjsr PULL")       # pull element address to r0
+                    print("\t\tldy #0")
+                    print("\t\tlda (r0),y")
+                    print("\t\ttax")            # .X = LSB
+                    print("\t\tiny")
+                    print("\t\tlda (r0),y")     # .A = MSB
+                    print("\t\tsta r0H")
+                    print("\t\tstx r0L")
+                    print("\t\tjsr PUSH")   # PUSH element VALUE back to TOS
+                else:
+                    print('*** DIM_VAL ERR')
+                    print("Error: DIM unknown array index")
+                    exit()
+            else:                                           # <expression>, need to get result from stack
+                compile(t.children[1])                      # index in on TOS
+                print("\t\tLoadAddress " + dim_name)        # add DIM memory address
+                print("\t\tjsr PUSH")
+                print("\t\tjsr ADD")
+                print("\t\tjsr PULL")   # element => base_address + array_index
+                print("\t\tldy #0")
+                print("\t\tlda (r0),y")
+                print("\t\ttax")            # .X = LSB
+                print("\t\tiny")
+                print("\t\tlda (r0),y")     # .A = MSB
+                print("\t\tsta r0H")
+                print("\t\tstx r0L")
+                print("\t\tjsr PUSH")   # PUSH element VALUE back to TOS
+
+        ###
+        ### DIM SET => VAR_ID(<expr1>) = <expr2>
+        ###
+        elif t.data == 'dim_set':
+            dim_name = t.children[0]
+            #print(dim_name)
+            if dim_name not in dim_list:
+                print('*** DIM ERR')
+                print("Error: DIM undeclared")
+                exit()
+            compile(t.children[2])  ######################### compile <expr2> = RLVAL to TOS
+            if isinstance(t.children[1], Token):    ######### <expr1> = array index
+                if t.children[1].type == 'INT':             # INT, no need for stack usage
+                    dim_index = t.children[1]
+                    print("\t\tPushInt " + dim_index)
+                    print("\t\tjsr MUL2")                   # each element is 2-bytes wide
+                    print("\t\tLoadAddress " + dim_name)    # add DIM memory address
+                    print("\t\tjsr PUSH")
+                    print("\t\tjsr ADD")        # element address (TOS) = base_address + array_index
+                    print("\t\tjsr PULL")       # pull element address to r0
+                                            ##### TOS = <expr2> = new element value
+                    print("\t\tldx FPSP")
+                    print("\t\tldy #0")
+                    print("\t\tlda SIL-1,x")    # copy new element value (TOS) to array's element address
+                    print("\t\tsta (r0),y")
+                    print("\t\tiny")
+                    print("\t\tlda SIH-1,x")
+                    print("\t\tsta (r0),y")
+                    print("\t\tjsr DROP")       # DROP element value from TOS
+                elif t.children[1].type == 'VAR_ID':
+                    #print("*** DIM_VAL : INDEX = EXPRESSION")
+                    print("\t\tlda " + t.children[0].value)         # load low byte of VAR_ID
+                    print("\t\tsta r0L")
+                    print("\t\tlda " + t.children[0].value + "+1")  # load high byte of VAR_ID
+                    print("\t\tsta r0H")
+                    print("\t\tjsr PUSH")       # index VAR_ID pushed to TOS
+                    print("\t\tjsr MUL2")                   # each element is 2-bytes wide
+                    print("\t\tLoadAddress " + dim_name)    # add DIM memory address
+                    print("\t\tjsr PUSH")
+                    print("\t\tjsr ADD")        # element address (TOS) = base_address + array_index
+                    print("\t\tjsr PULL")       # pull element address to r0
+                                            ##### TOS = <expr2> = new element value
+                    print("\t\tldx FPSP")
+                    print("\t\tldy #0")
+                    print("\t\tlda SIL-1,x")    # copy new element value (TOS) to array's element address
+                    print("\t\tsta (r0),y")
+                    print("\t\tiny")
+                    print("\t\tlda SIH-1,x")
+                    print("\t\tsta (r0),y")
+                    print("\t\tjsr DROP")       # DROP element value from TOS
+                else:
+                    print('*** DIM_VAL ERR')
+                    print("Error: DIM unknown array index")
+                    exit()
+            else:                                           # <expression>, need to get result from stack
+                compile(t.children[1])                      # index in on TOS
+                print("\t\tLoadAddress " + dim_name)        # add DIM memory address
+                print("\t\tjsr PUSH")
+                print("\t\tjsr ADD")
+                print("\t\tjsr PULL")   # element => base_address + array_index
+                print("\t\tldy #0")
+                print("\t\tlda (r0),y")
+                print("\t\tiny")
+                print("\t\tldx (r0),y")
+                print("\t\tstx r0L")
+                print("\t\tsta r0H")
+                print("\t\tjsr PUSH")   # PUSH element back to TOS
+
+        ###
+        ### DIM DECLARE => (VAR_ID | STR_ID) (<expr>) [(, ID(<expr>))*]
         ###
         elif t.data == 'dim':
             dim_name = t.children[0]
             #print(dim_name)
             if isinstance(t.children[1], Token):
                 if t.children[1].type == 'INT':             # INT, no need for stack usage
-                    dim_size = t.children[1]
+                    dim_elements = t.children[1]
+                    dim_size = str(int(t.children[1]) * 2)  # each element INT (2 bytes); str->int->str
                 if dim_name not in dim_list:                # dim_name is new
                     dim_list.update({dim_name:dim_size})    # Add dim_name to dim_list
                 else:
                     print('*** DIM ERR')
                     print("Error: DIM redimensioning not implemented")
                     exit()
-                print("\t\t; DIM " + dim_name + "(" + dim_size + ")")
+                print("\t\t; DIM " + dim_name + "(" + dim_elements + ")")
             else:
                 #print('*** DIM ERR')
                 print("\t\t; DIM " + dim_name + "(undefined)")                

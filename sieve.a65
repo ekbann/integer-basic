@@ -1,0 +1,61 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L5:		; REM MULTIPLE LOOPS WITH SAME LABEL ERROR
+L60:		PushInt 1
+		PullVar I
+		PushInt 10
+		PullVar IEND
+		PushInt 1
+		PullVar ISTEP
+LOOP0:
+		PushVar IEND
+		PushVar I
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP0CONT
+		jmp LOOP0END
+LOOP0CONT:
+L80:		; REM NEXT I
+L90:		PushInt 1
+		PullVar J
+		PushInt 10
+		PullVar JEND
+		PushInt 1
+		PullVar JSTEP
+LOOP1:
+		PushVar JEND
+		PushVar J
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP1CONT
+		jmp LOOP1END
+LOOP1CONT:
+L180:		PushVar J
+		PushVar JSTEP
+		jsr ADD
+		PullVar J
+		jmp LOOP1
+LOOP1END:
+L185:		PushVar I
+		PushVar ISTEP
+		jsr ADD
+		PullVar I
+		jmp LOOP0
+LOOP0END:
+L190:		rts
+
+I:		.res 4
+IEND:		.res 4
+ISTEP:		.res 4
+J:		.res 4
+JEND:		.res 4
+JSTEP:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"

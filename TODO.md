@@ -1,9 +1,44 @@
-### FINISH VTAB FOR NON-INT CASES (LIKE TAB AND COLOR)
+# TODO
+
+## Fix or Finish Me
+
+(Compiler) LOOP: I cannot recycle the same loop VAR_ID because it is pre-existing in the loop-list
+                it will use the same LOOP0 labels. I should be able to use the same VAR_ID storage
+                but create new LOOPx labels. Check original SIEVE.BAS.
+            ==> NESTED LOOPS WORKS! But two consective loops causes LABEL "already defined" errors.
+
+(BASIC) VTAB: consider non-INT cases as done with TAB and COLOR
+(BASIC) DIM: add assignment `70 FLAGS(I) = 1`
+(BASIC) DIM: Re-dimension of a pre-existing A$; memory problems
+        (AS/C64) causes "?REDIM'D ARRAY ERROR"
+        (INT) allows re-dimension!
+
+(BASIC) GOTO: Integer BASIC allows `GOTO <expr>` where `<expr>` can be VAR_ID or <expression> but
+        for some reason cannot be `GOTO 5+5`. Applesoft and C64 can only be `GOTO INT`.
+        FIX: `LN=40 : GOTO LN` doesn't work; generates `PullVar LN : jmp LN` 
+        FIX: `GOTO 10+10` also doesn't work; need a separate `compile(t.children[0])` without STACK
+        NOTE: C64 implementation: After parsing the line number from the ASCII-encoded number, the system then looks for the target line using the line-lookup routine. If the target line number is higher than the current one, the system searches forward from the current line. If the target line number is lower than the current one, the system searches from program start.
+        IDEA: Every time a LINE integer is parsed to a label, "10" -> "L10:", create a line_lookup_table as such: <expr> (INT 2-bytes) : L<int> (address 2-bytes), i.e. 4-bytes per BASIC line number. Also provide a line_lookup table that searches the <expr> integer value to its corresponding label address. That's an expensive time consuming operation so AVOID it and just use `GOTO <int>` when possible.
+
+(BASIC) DIM: Maybe merge `dim_set` with `assignment`
+        Currently operating on VAR_ID only; Need to add STR_ID as well.
+        DIM assumes INT elements but later could/should be FIXED-POINT (4-bytes)
+        write MACROS for PullDim and PushDim
+
+(BASIC) TAB: also applies to other functions; After processing INT (for optimization) do I need to test
+        for VAR_ID as well or just call `compile(t.children[0])`?
+
+(BASIC) PRINT: does not process anything but TEXT or INT; cannot print DIM(<expr>)
+
+## Add Me
+
+## Optimize me
+
 ### LOOP vars don't need to be 4 bytes long (32-bit)
 
-### FIXME
-
-DIM: Re-dimension of a pre-existing A$; memory problems
+(BASIC) LOCATE: optimize for INT,INT or INT,VAR or VAR,INT
+(BASIC) TAB: add alias to HTAB for (AS) compatibility
+(LIB) MATH: add PWR10 and FPPWR10 (10^X)
 
 ### OPTIMIZE
 

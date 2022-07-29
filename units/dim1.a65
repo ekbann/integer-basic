@@ -1,0 +1,92 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TEST SIMPLE DIM STATEMENTS
+L20:		; DIM AR(10)
+L30:		PushInt 96
+		PushInt 1
+		jsr MUL2
+		LoadAddress AR
+		jsr PUSH
+		jsr ADD
+		jsr FPSTACK
+		jsr PULL
+		ldx FPSP
+		ldy #0
+		lda SIL-1,x
+		sta (r0),y
+		iny
+		lda SIH-1,x
+		sta (r0),y
+		jsr DROP
+		; REM DIM_SET =OK
+L35:		; REM SS$(5) = "TEST" : REM CONCAT =OK
+L40:		PushInt 2
+		jsr MUL2
+		LoadAddress AR
+		jsr PUSH
+		jsr ADD
+		jsr FPSTACK
+		jsr PULL
+		ldy #0
+		lda (r0),y
+		tax
+		iny
+		lda (r0),y
+		sta r0H
+		stx r0L
+		jsr PUSH
+		PullVar XX
+		; REM DIM_VAL =OK
+L50:		PushInt 1
+		jsr MUL2
+		LoadAddress AR
+		jsr PUSH
+		jsr ADD
+		jsr FPSTACK
+		jsr PULL
+		ldy #0
+		lda (r0),y
+		tax
+		iny
+		lda (r0),y
+		sta r0H
+		stx r0L
+		jsr PUSH
+		PullVar YY
+		; REM DIM_VAL = OK
+L60:		PushInt 5
+		PullVar NN
+L70:		PushInt 255
+		lda AR
+		sta r0L
+		lda AR+1
+		sta r0H
+		jsr PUSH
+		jsr MUL2
+		LoadAddress AR
+		jsr PUSH
+		jsr ADD
+		jsr FPSTACK
+		jsr PULL
+		ldx FPSP
+		ldy #0
+		lda SIL-1,x
+		sta (r0),y
+		iny
+		lda SIH-1,x
+		sta (r0),y
+		jsr DROP
+L80:		jsr FPSTACK
+L90:		rts
+
+XX:		.res 4
+YY:		.res 4
+NN:		.res 4
+AR:		.res 20
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"
