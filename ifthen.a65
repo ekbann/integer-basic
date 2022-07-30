@@ -1,0 +1,36 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TESTING IF-THEN-GOTO
+L20:		PushInt 10
+		PullVar XX
+L30:		PushInt 20
+		PullVar YY
+L40:		PushVar XX
+		PushInt 20
+		jsr GT
+		jsr PULL
+		lda r0L
+		cmp #1
+		bne IFTHEN1
+		jmp L70
+IFTHEN1:
+L50:		LoadAddress S0		; to r0
+		jsr PrString
+		PrintNewline
+L60:		jmp L80
+L70:		LoadAddress S1		; to r0
+		jsr PrString
+		PrintNewline
+L80:		rts
+
+S0:		.asciiz "xx < yy"
+S1:		.asciiz "xx > yy"
+XX:		.res 4
+YY:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"

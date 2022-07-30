@@ -185,6 +185,7 @@ dim_ptr_list = []   # list of STR_ID without size, defined at runtime, uses poin
 loop_count = 0
 loop_list = []
 next_list = []
+if_count = 0
 
 ###
 ### COMPILER FUNCTION
@@ -198,6 +199,7 @@ def compile(t):
     global loop_count   # loop_label = LOOP<loop_count>
     global loop_list    # PushVar|PullVar <var_id>
     global next_list    # jmp LOOP1 , LOOP1END: using loop_labels
+    global if_count     # IF-THEN needs unique labels every time
     
     ###
     ### PROCESS TOKEN OBJECT = <class 'lark.lexer.Token'>
@@ -446,6 +448,24 @@ def compile(t):
                     print("\t\tsta r0H")
                     print("\t\tstx r0L")
                     print("\t\tjsr PUSH")   # PUSH element VALUE back to TOS
+
+                elif t.children[1].type == 'VAR_ID':
+                    #print("*** DIM_VAL : INDEX = EXPRESSION")
+                    print("\t\tPushVar " + t.children[1].value)     # PUSH VAR_ID index value to TOS
+                    print("\t\tjsr MUL2")                   # each element is 2-bytes wide
+                    print("\t\tLoadAddress " + dim_name)    # add DIM memory address
+                    print("\t\tjsr PUSH")
+                    print("\t\tjsr ADD")        # element address (TOS) = base_address + array_index
+
+                    print("\t\tjsr PEEK")       # PEEK element address to r0
+                                            ##### TOS = <expr2> = new element value
+                    print("\t\tldx FPSP")
+                    print("\t\tldy #0")
+                    print("\t\tlda (r0),y")
+                    print("\t\tsta SIL-1,x")
+                    print("\t\tiny")
+                    print("\t\tlda (r0),y")
+                    print("\t\tsta SIH-1,x")    # replace TOS with element value
                 else:
                     print('*** DIM_VAL ERR')
                     print("Error: DIM unknown array index")
@@ -496,11 +516,12 @@ def compile(t):
                     print("\t\tjsr DROP")       # DROP element value from TOS
                 elif t.children[1].type == 'VAR_ID':
                     #print("*** DIM_VAL : INDEX = EXPRESSION")
-                    print("\t\tlda " + t.children[0].value)         # load low byte of VAR_ID
-                    print("\t\tsta r0L")
-                    print("\t\tlda " + t.children[0].value + "+1")  # load high byte of VAR_ID
-                    print("\t\tsta r0H")
-                    print("\t\tjsr PUSH")       # index VAR_ID pushed to TOS
+#                    print("\t\tlda " + t.children[1].value)         # load LSB from VAR_ID (index) address
+#                    print("\t\tsta r0L")
+#                    print("\t\tlda " + t.children[1].value + "+1")  # load MSB from VAR_ID (index) address
+#                    print("\t\tsta r0H")
+#                    print("\t\tjsr PUSH")                   # VAR_ID (index) pushed to TOS
+                    print("\t\tPushVar " + t.children[1].value) ### SAME AS THE ABOVE MOVES... VAR_ID (index) pushed to TOS
                     print("\t\tjsr MUL2")                   # each element is 2-bytes wide
                     print("\t\tLoadAddress " + dim_name)    # add DIM memory address
                     print("\t\tjsr PUSH")
@@ -542,7 +563,8 @@ def compile(t):
             if isinstance(t.children[1], Token):
                 if t.children[1].type == 'INT':             # INT, no need for stack usage
                     dim_elements = t.children[1]
-                    dim_size = str(int(t.children[1]) * 2)  # each element INT (2 bytes); str->int->str
+                    dim_size = str(int(t.children[1]) * 2 + 1)      # each element INT (2 bytes); X+1 elements; 0-X
+                                                                    # str->int->str
                 if dim_name not in dim_list:                # dim_name is new
                     dim_list.update({dim_name:dim_size})    # Add dim_name to dim_list
                 else:
@@ -591,7 +613,7 @@ def compile(t):
                 if var_name not in dim_list:
                     print("Error: STR_ID not defined: " + var_name)
                     exit()
-                    
+
         ###
         ### FOR
         ###
@@ -730,6 +752,42 @@ def compile(t):
                         newline = False                    
                 if newline:
                     print("\t\tPrintNewline")
+
+        ###
+        ### IF <expr> THEN (INT | statement)
+        ###
+        elif t.data == 'if':
+            if_count += 1
+            if_label = "IFTHEN" + str(if_count)
+            compile(t.children[0])
+            print("\t\tjsr PULL")   # PULL logic result from TOS
+            print("\t\tlda r0L")
+            print("\t\tcmp #1")
+            print("\t\tbne " + if_label)
+            print("\t\tjmp L" + t.children[1].value)    # GOTO <INT>
+            print(if_label + ":")
+
+        ###
+        ### compare_exp: [(compare_exp REL_OP)*] add_exp
+        ###
+        elif t.data == 'compare_exp':
+            compile(t.children[0])  # lval
+            compile(t.children[2])  # rval
+            if t.children[1] == '=':
+                print("\t\tjsr EQ")
+            elif t.children[1] == '>':
+                print("\t\tjsr GT")
+            elif t.children[1] == '<':
+                print("\t\tjsr LT")
+            elif t.children[1] == '!=':
+                print("\t\tjsr NEQ")
+            elif t.children[1] == '<=':
+                print("\t\tjsr LE")
+            elif t.children[1] == '>=':
+                print("\t\tjsr GE")
+            else:
+                print("*** REL_OP error, unknown REL_OP encountered")
+                exit()
 
         ###
         ### MUL/DIV/MOD

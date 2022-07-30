@@ -1,5 +1,13 @@
 # TODO
 
+Maybe add `LOADADDRESS <VAR_ID>` BASIC command to load any variable address to r0 for easy inspection like STACK
+    followed by `stp`.
+
+```
+    		LoadAddress ARY
+			stp
+```
+
 ## Fix or Finish Me
 
 (BASIC) VTAB: consider non-INT cases as done with TAB and COLOR

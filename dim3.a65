@@ -1,0 +1,60 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L5:		; REM TEST DIM FROM SIEVE
+L10:		PushInt 8190
+		PullVar SIZE
+L20:		; DIM FLAGS(8191)
+L60:		PushInt 0
+		PullVar I
+		PushVar SIZE
+		PullVar IEND
+		PushInt 1
+		PullVar ISTEP
+LOOP1:
+		PushVar IEND
+		PushVar I
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP1CONT
+		jmp LOOP1END
+LOOP1CONT:
+L70:		PushInt 1
+		lda I
+		sta r0L
+		lda I+1
+		sta r0H
+		jsr PUSH
+		jsr MUL2
+		LoadAddress FLAGS
+		jsr PUSH
+		jsr ADD
+		jsr PULL
+		ldx FPSP
+		ldy #0
+		lda SIL-1,x
+		sta (r0),y
+		iny
+		lda SIH-1,x
+		sta (r0),y
+		jsr DROP
+L80:		PushVar I
+		PushVar ISTEP
+		jsr ADD
+		PullVar I
+		jmp LOOP1
+LOOP1END:
+L90:		rts
+
+SIZE:		.res 4
+I:		.res 4
+IEND:		.res 4
+ISTEP:		.res 4
+FLAGS:		.res 16382
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"

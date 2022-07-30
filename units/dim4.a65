@@ -1,0 +1,75 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TEST DIM_SET USING VAR_ID
+L20:		; DIM ARY(10)
+L22:		PushInt 0
+		PullVar I
+		PushInt 10
+		PullVar IEND
+		PushInt 1
+		PullVar ISTEP
+LOOP1:
+		PushVar IEND
+		PushVar I
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP1CONT
+		jmp LOOP1END
+LOOP1CONT:
+L24:		PushInt 15
+		PushVar I
+		jsr MUL2
+		LoadAddress ARY
+		jsr PUSH
+		jsr ADD
+		jsr PULL
+		ldx FPSP
+		ldy #0
+		lda SIL-1,x
+		sta (r0),y
+		iny
+		lda SIH-1,x
+		sta (r0),y
+		jsr DROP
+		; REM $F0
+L26:		PushVar I
+		PushVar ISTEP
+		jsr ADD
+		PullVar I
+		jmp LOOP1
+LOOP1END:
+L30:		PushInt 5
+		PullVar IDX
+L40:		PushInt 44718
+		PushVar IDX
+		jsr MUL2
+		LoadAddress ARY
+		jsr PUSH
+		jsr ADD
+		jsr PULL
+		ldx FPSP
+		ldy #0
+		lda SIL-1,x
+		sta (r0),y
+		iny
+		lda SIH-1,x
+		sta (r0),y
+		jsr DROP
+		LoadAddress ARY
+		stp
+
+L50:		rts
+
+I:		.res 4
+IEND:		.res 4
+ISTEP:		.res 4
+IDX:		.res 4
+ARY:		.res 21
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"
