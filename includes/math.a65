@@ -164,12 +164,12 @@ LT:
 		lda SIH-1,x     ; compare high bytes
 		cmp SIH,x
 		bcc LTTRUE      ; if a.H < b.H then a < b
-		;bne LT2      ; if a.H <> b.H then a > b (so a >= b)
+		bne LTFALSE      ; if a.H <> b.H then a > b (so a >= b)
 		lda SIL-1,x     ; compare low bytes
 		cmp SIL,x
 		bcc LTTRUE      ; if a.L < b.L then a < b
 		; continue if false
-		stz SIH-1,x
+LTFALSE:stz SIH-1,x
 		stz SIL-1,x       ; store 0 (FALSE)
 		jmp LTEND
 LTTRUE:		stz SIH-1,x

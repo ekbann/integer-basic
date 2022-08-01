@@ -2,13 +2,13 @@
 .include "./includes/header.inc"
 
 L10:		; REM TESTING IF-THEN-GOTO
-L20:		PushInt 10
+L20:		PushInt 300
 		PullVar XX
-L30:		PushInt 20
+L30:		PushInt 200
 		PullVar YY
 L40:		PushVar XX
-		PushInt 20
-		jsr GT
+		PushVar YY
+		jsr LT
 		jsr PULL
 		lda r0L
 		cmp #1
@@ -24,8 +24,8 @@ L70:		LoadAddress S1		; to r0
 		PrintNewline
 L80:		rts
 
-S0:		.asciiz "xx < yy"
-S1:		.asciiz "xx > yy"
+S0:		.asciiz "xx > yy"
+S1:		.asciiz "xx < yy"
 XX:		.res 4
 YY:		.res 4
 BUFFER:

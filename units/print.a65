@@ -1,0 +1,23 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TEST PRINT (<INT>|<VAR_ID>)
+L20:		StoreImm 123,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L30:		PushInt 321
+		PullVar AX
+L40:		MoveW AX,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L50:		rts
+
+AX:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"

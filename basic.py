@@ -78,6 +78,7 @@ basic_grammar = """
     ?statement: ("HOME" | "CLS") -> home
               | "END" -> end
               | "STACK" -> stack
+              | "TIME" -> time
               | "DATA" constant [("," constant)*] -> data
               | "READ" ID [("," ID)*] -> read
               | "CALL" expression -> call
@@ -245,6 +246,12 @@ def compile(t):
         ###
         elif t.data == 'stack':                          
             print("\t\tjsr FPSTACK")
+
+        ###
+        ### TIME: prints current jiffies since boot $YYXXAA (registers) after KERNAL call to RDTIM
+        ###
+        elif t.data == 'time':                          
+            print("\t\tjsr TIME")
 
         ###
         ### PEEK()
@@ -731,12 +738,27 @@ def compile(t):
         ### PRINT
         ###
         elif t.data == 'print':
+            #print("### BREAK: Tree list: ", t.children)
+            #exit()
             newline = True
             if not t.children:                  # No arguments
                 print("\t\tPrintNewline")
             else:                               # Process all PRINT arguments
                 for i in range(len(t.children)):
-                    #print(t.children[i])
+                    #print("### BREAK: " + t.children[i])
+                    #print(t.children[i].type)
+                    #exit()
+                    if t.children[i].type == 'VAR_ID':
+                        print("\t\tMoveW " + t.children[0].value + ",r0")
+                        print("\t\tldy #0")
+                        print("\t\tjsr PrSgnDec16")
+                    if t.children[i].type == 'INT':
+                        val = int(t.children[0].value)
+#                        print("\t\tPushInt " +  t.children[0].value)
+#                        print("\t\tjsr PULL")   # <INT> is now in r0
+                        print("\t\tStoreImm " + t.children[0].value + ",r0")    # Macro = same as above 2 lines
+                        print("\t\tldy #0")
+                        print("\t\tjsr PrSgnDec16")
                     if t.children[i].type == 'STRING':
                         str_label = "S" + str(str_count)
                         str_count = str_count + 1                        

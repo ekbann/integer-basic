@@ -2,6 +2,7 @@
 .include "./includes/header.inc"
 
 L5:		; REM ERATOSTHENES SIEVE PRIME NUMBER PROGRAM IN BASIC 
+L7:		; REM ANSWER = 1899
 L10:		PushInt 8190
 		PullVar SIZE
 L20:		; DIM FLAGS(8191)
@@ -11,14 +12,14 @@ L30:		LoadAddress S0		; to r0
 L50:		PushInt 0
 		PullVar COUNT
 L60:		PushInt 0
-		PullVar I
+		PullVar II
 		PushVar SIZE
-		PullVar IEND
+		PullVar IIEND
 		PushInt 1
-		PullVar ISTEP
+		PullVar IISTEP
 LOOP1:
-		PushVar IEND
-		PushVar I
+		PushVar IIEND
+		PushVar II
 		jsr LT
 		jsr PULL
 		lda r0L
@@ -26,7 +27,7 @@ LOOP1:
 		jmp LOOP1END
 LOOP1CONT:
 L70:		PushInt 1
-		PushVar I
+		PushVar II
 		jsr MUL2
 		LoadAddress FLAGS
 		jsr PUSH
@@ -40,10 +41,10 @@ L70:		PushInt 1
 		lda SIH-1,x
 		sta (r0),y
 		jsr DROP
-L80:		PushVar I
-		PushVar ISTEP
+L80:		PushVar II
+		PushVar IISTEP
 		jsr ADD
-		PullVar I
+		PullVar II
 		jmp LOOP1
 LOOP1END:
 L90:		PushInt 0
@@ -131,16 +132,21 @@ L180:		PushVar I
 		PullVar I
 		jmp LOOP2
 LOOP2END:
-L190:		PrintNewline
-L195:		LoadAddress S1		; to r0
+L190:		MoveW COUNT,r0
+		ldy #0
+		jsr PrSgnDec16
+		jsr Tab
+		LoadAddress S1		; to r0
 		jsr PrString
-		PrintNewline
 L200:		rts
 
 S0:		.asciiz "only 1 iteration"
 S1:		.asciiz " primes"
 SIZE:		.res 4
 COUNT:		.res 4
+II:		.res 4
+IIEND:		.res 4
+IISTEP:		.res 4
 I:		.res 4
 IEND:		.res 4
 ISTEP:		.res 4

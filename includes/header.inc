@@ -1,6 +1,8 @@
 .FEATURE dollar_in_identifiers
 
-screen_mode	= $ff5f
+screen_mode	= $ff5f ; Commodore 128 API Compatibility, C128 name = SWAPPER
+RDTIM		= $ffde	; Commodore 64 standard KERNAL function
+;clock_get_date_time = $ff50	; New API for the Commander X16 (NOT WORKING)
 CHROUT		= $FFD2
 PLOT		= $FFF0
 NEWLINE		= $0D

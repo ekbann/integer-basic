@@ -1,0 +1,46 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TEST PRINT LOOP WITH <VAR_ID>
+L15:		jsr TIME
+L20:		PushInt 0
+		PullVar AX
+		PushInt 35
+		PullVar AXEND
+		PushInt 1
+		PullVar AXSTEP
+LOOP1:
+		PushVar AXEND
+		PushVar AX
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP1CONT
+		jmp LOOP1END
+LOOP1CONT:
+L30:		MoveW AX,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L40:		PushVar AX
+		PushVar AXSTEP
+		jsr ADD
+		PullVar AX
+		jmp LOOP1
+LOOP1END:
+L45:		StoreImm 6969,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L48:		jsr TIME
+L50:		rts
+
+AX:		.res 4
+AXEND:		.res 4
+AXSTEP:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"

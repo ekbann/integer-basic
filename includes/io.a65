@@ -300,6 +300,28 @@ PrFP32:
 		pla
 		rts
 
+; Print TIME
+; Dump all elements of the INT stack (16-bit)
+;
+TIME:
+		pha
+		phx
+		phy
+		lda #'$'
+		jsr CHROUT
+		jsr RDTIM		; jiffies = $(.Y)(.X)(.A) < $4F1A01 == 24:00:00 hours
+		pha				; save .A
+		tya
+		jsr PrHex8		; .Y = Hi-Byte
+		txa
+		jsr PrHex8		; .X = Mid-Byte
+		pla
+		jsr PrHex8		; .A = Lo-Byte
+		ply
+		plx
+		pla
+		rts
+
 ; Dump all elements of the INT stack (16-bit)
 ;
 STACK:

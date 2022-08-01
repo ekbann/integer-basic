@@ -1,10 +1,25 @@
-# Integer BASIC aka Game BASIC Compiler (GBC)
+# Integer BASIC aka Game BASIC Compiler aka GBC
 
-Why write a 6502 compiler? I am a BIG fan of 8-bit computers such as the Commodore 64 and Apple ][ family. There is a new project going on to design and build a modern 8-bit computer with modern components with a boosted 8MHz 65c02 CPU and 2MB of banked RAM called the Commander X16. This compiler is to be used on that platform to generate fast assembly code.
+Why? When I first heard about the cool project Commander X16, the best 8-bit computer with modern still-available components, I wanted to play with it. Fortunately they had an emulator for users to start developing software. Using the CC65 compiler suite, I did the simple "Hello, World!" test using `printf()` and the result was an enormous executable. I thought that I could do better and more efficiently and that was enough reason and an excuse for me to go back to my first love, compiler design.
+
+Why write a 6502 compiler? I am a BIG fan of 8-bit computers such as the Commodore 64 and Apple ][ family. The Commander X16 has a boosted 8MHz 65c02 CPU, 2MB of banked RAM along with the main 64K memory, and an advanced audio/graphics called the VERA. This compiler will hopefully generate fast assembly code.
 
 Why BASIC? The BASIC language is a proven and very capable programming language that has a very simple grammar. Woz said that BASIC is "not a real super structured language where you have to learn so much about the structure. It's better to learn structure from the ground up, the basic atoms. Which is what BASIC is. To learn the structure from the ground up, once you've learned it you will apply it in a structured language. Then you're ready for it." Also, it is not  hard to translate into 6502 assembly language because of its similarities like GOTO/JMP and GOSUB/JSR.
 
-Why integers? As Woz famously said, "all you need for games is integers," such that he sometimes refers to it as Game BASIC. While it can run in integer mode only (so I can beat all of the available INT benchmarks), I am adding fixed-point signed Q16.16 capability to render beautiful Mandebrot plots (initial goal; also to beat all of the available FP benchmarks as well). Adding real number mathematics is the hard part. There are no MUL or DIV on the 6502 instruction set, that means doing bit SHIFTs and ROTATEs manually.
+Why integers? As Woz famously said, "all you need for games is integers," such that he sometimes refers to it as Game BASIC. While it can run in integer mode only (so I can beat all of the available INT benchmarks), I am adding fixed-point signed Q16.16 capability to render beautiful Mandebrot plots (it will perform better than other BASIC with floating-point math). Adding real number mathematics is the hard part. There are no MUL or DIV on the 6502 instruction set, that means doing bit SHIFTs and ROTATEs manually.
+
+### BENCHMARK
+
+In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was less important but array access and looping performance dominated. Results below are for 1 iteration only:
+
+Applesoft BASIC took 200 seconds 
+Apple Integer BASIC took 166 seconds
+Commodore BASIC 2.0 (X16) took 42.35 seconds
+Compiled Integer BASIC (X16) took 4.2 seconds
+cc65 original C program (X16) took 0.75 second
+Prog8 C program conversion (X16) took 0.25 second!
+
+Where GBC will shine is during fixed-point operations.
 
 ### IMPLEMENTATION
 
@@ -27,6 +42,15 @@ Do NOT use single letters as variable names because it can crash the compiler:
 
 "Use of identifiers consisting of a single character will not work in all cases, because some of these identifiers are reserved keywords (for example "A" is not a valid identifier for a label, because it is the keyword for the accumulator)."
 
+Debugging can be done by editing the A65 assembly source and add the following instructions:
+
+* `jsr FPSTACK` - prints the entire active stack (4-bytes per level) in the signed Q16.16 format
+* `stp` - 6502 SToP instruction which pauses program execution and enter the X16 debugger; needs `-debug` option
+* `LoadAddress <label>` - loads the address of `<label>` into the `r0` register; easy to see in the debugger
+* `MoveW <var_id>,r0` - loads the **value** from variable `<var_id>` into the `r0` register
+
+Remember not to compile directly from BAS source otherwise that will overwrite the edited A65 assembly source.
+
 ### HOW-TO
 
 STEP 1: Compile BASIC program to 6502 assembly code
@@ -37,6 +61,13 @@ STEP 1: Compile BASIC program to 6502 assembly code
 STEP 2: Assemble A65 source to 6502 machine code using ca65
 
 ```./make.sh program.a65```
+    -> generates program.prg
+    -> executes x16
+
+Alternatively: Complete compile from BASIC to PRG
+
+```./make.sh -b program.bas```
+    -> generates program.a65
     -> generates program.prg
     -> executes x16
 

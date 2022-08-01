@@ -2,9 +2,9 @@
 .include "./includes/header.inc"
 
 L5:		; REM TEST DIM FROM SIEVE
-L10:		PushInt 8190
+L10:		PushInt 127
 		PullVar SIZE
-L20:		; DIM FLAGS(8191)
+L20:		; DIM FLAGS(128)
 L60:		PushInt 0
 		PullVar I
 		PushVar SIZE
@@ -20,12 +20,8 @@ LOOP1:
 		beq LOOP1CONT
 		jmp LOOP1END
 LOOP1CONT:
-L70:		PushInt 1
-		lda I
-		sta r0L
-		lda I+1
-		sta r0H
-		jsr PUSH
+L70:		PushInt 255
+		PushVar I
 		jsr MUL2
 		LoadAddress FLAGS
 		jsr PUSH
@@ -45,16 +41,21 @@ L80:		PushVar I
 		PullVar I
 		jmp LOOP1
 LOOP1END:
-L90:		rts
-
-SIZE:		.res 4
-I:		.res 4
-IEND:		.res 4
-ISTEP:		.res 4
-FLAGS:		.res 16382
-BUFFER:
-
-.include "./includes/io.a65"
-.include "./includes/math.a65"
-.include "./includes/mathfp.a65"
-.include "./includes/graphics.a65"
+L90:		PushInt 0
+		PullVar I
+		PushVar SIZE
+		PullVar IEND
+		PushInt 1
+		PullVar ISTEP
+LOOP2:
+		PushVar IEND
+		PushVar I
+		jsr LT
+		jsr PULL
+		lda r0L
+		beq LOOP2CONT
+		jmp LOOP2END
+LOOP2CONT:
+L95:		; REM PRINT I
+L100:		; REM PRINT FLAGS(I)
+L105:### BREAK: Tree list:  [Tree('dim_val', [Token('VAR_ID', 'FLAGS'), Token('INT', '1')])]

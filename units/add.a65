@@ -1,0 +1,35 @@
+.include "./includes/macros.inc"
+.include "./includes/header.inc"
+
+L10:		; REM TEST ADDITION OVER 255
+L20:		PushInt 300
+		PullVar XX
+L30:		PushInt 200
+		PullVar YY
+L40:		PushVar XX
+		PushVar YY
+		jsr ADD
+		PullVar ZZ
+L50:		MoveW XX,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L52:		MoveW YY,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L54:		MoveW ZZ,r0
+		ldy #0
+		jsr PrSgnDec16
+		PrintNewline
+L60:		rts
+
+XX:		.res 4
+YY:		.res 4
+ZZ:		.res 4
+BUFFER:
+
+.include "./includes/io.a65"
+.include "./includes/math.a65"
+.include "./includes/mathfp.a65"
+.include "./includes/graphics.a65"
