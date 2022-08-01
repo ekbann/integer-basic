@@ -12,6 +12,8 @@ Why integers? As Woz famously said, "all you need for games is integers," such t
 
 In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was less important but array access and looping performance dominated. Results below are for 1 iteration only:
 
+Platform | Time
+--- | ---
 Commodore 64 BASIC took : 315 s :
 Applesoft BASIC took : 200 s :
 Apple Integer BASIC took : 166 s :
