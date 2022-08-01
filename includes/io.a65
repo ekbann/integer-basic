@@ -317,6 +317,7 @@ TIME:
 		jsr PrHex8		; .X = Mid-Byte
 		pla
 		jsr PrHex8		; .A = Lo-Byte
+		PrintNewline
 		ply
 		plx
 		pla

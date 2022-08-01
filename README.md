@@ -12,13 +12,15 @@ Why integers? As Woz famously said, "all you need for games is integers," such t
 
 In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was less important but array access and looping performance dominated. Results below are for 1 iteration only:
 
-Applesoft BASIC took 200 seconds 
-Apple Integer BASIC took 166 seconds
-Commodore BASIC 2.0 (X16) took 42.35 seconds
-Compiled Integer BASIC (X16) took 4.2 seconds
-cc65 original C program (X16) took 0.75 second
-Prog8 C program conversion (X16) took 0.25 second!
-
+|------------------------------------------------------
+| Commodore 64 BASIC took                     : 315 s :
+| Applesoft BASIC took                        : 200 s :
+| Apple Integer BASIC took                    : 166 s :
+| Commodore BASIC 2.0 (X16) took            : 42.35 s :
+| Compiled Integer BASIC (X16) took          : 4.17 s :
+| cc65 original C program (X16) took         : 0.75 s :
+| Prog8 C program conversion (X16) took      : 0.25 s :
+|------------------------------------------------------
 Where GBC will shine is during fixed-point operations.
 
 ### IMPLEMENTATION

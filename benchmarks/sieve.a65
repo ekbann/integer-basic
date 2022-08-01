@@ -9,6 +9,7 @@ L20:		; DIM FLAGS(8191)
 L30:		LoadAddress S0		; to r0
 		jsr PrString
 		PrintNewline
+L40:		jsr TIME
 L50:		PushInt 0
 		PullVar COUNT
 L60:		PushInt 0
@@ -132,6 +133,7 @@ L180:		PushVar I
 		PullVar I
 		jmp LOOP2
 LOOP2END:
+L185:		jsr TIME
 L190:		MoveW COUNT,r0
 		ldy #0
 		jsr PrSgnDec16
