@@ -14,13 +14,13 @@ In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was les
 
 Platform | Time
 --- | ---
-Commodore 64 BASIC took : 315 s :
-Applesoft BASIC took : 200 s :
-Apple Integer BASIC took : 166 s :
-Commodore BASIC 2.0 (X16) took : 42.35 s :
-Compiled Integer BASIC (X16) took : 4.17 s :
-cc65 original C program (X16) took : 0.75 s :
-Prog8 C program conversion (X16) took : 0.25 s :
+Commodore 64 BASIC took | 315 s
+Applesoft BASIC took | 200 s
+Apple Integer BASIC took | 166 s
+Commodore BASIC 2.0 (X16) took | 42.35 s
+Compiled Integer BASIC (X16) took | 4.17 s
+cc65 original C program (X16) took | 0.75 s
+Prog8 C program conversion (X16) took | 0.25 s
 
 Where GBC will shine is during fixed-point operations.
 
