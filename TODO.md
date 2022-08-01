@@ -1,19 +1,19 @@
 # TODO
 
-* Add FETCH/FPFETCH to get data from address on TOS; data replaces address at TOS => improve DIM_SET/DIM_VAL code output
+* Add `FETCH/FPFETCH` to get data from address on TOS; data replaces address at TOS => improve DIM_SET/DIM_VAL code output
 * DIM arrays can be "banked" into 256-bytes pages ($100 aligned) -> can use .Y indexed per page. Only for BYTE sized DIMs? What about 16-bit INTs? Perhaps "page" them in BANKED RAM and do page switching as needed. 8K array => 8191/256 = 32 "pages" => fits in one X16 banked RAM PAGE
 * LT function is fixed; check other LOGIC_OPs for similar bug
 * read about BSS versus RES assembler directives to avoids inflated PRG executable
-* dim3.bas = cannot print more than `SIZE=255`, loops back to 0 == FIXED; cannot PRINT ARY(I) or ARY(1)
-* print1.bas = cannot print negative numbers, `PRINT -12345` crashes compiler, positive works fine. ALSO, `PRINT AX` does not print ZERO (it is empty space)!
+* `dim3.bas` = cannot print more than `SIZE=255`, loops back to 0 == FIXED; cannot `PRINT ARY(I)` or `ARY(1)`
+* `print1.bas` = cannot print negative numbers, `PRINT -12345` crashes compiler, positive works fine. ALSO, `PRINT AX` does not print ZERO (it is empty space)!
 * Maybe add `LOADADDRESS <VAR_ID>` BASIC command to load any variable address to r0 for easy inspection like STACK followed by `stp`:
 
 ```
     		LoadAddress ARY
-			stp
+		stp
 ```
 
-## Fix or Finish Me
+## Fix/Finish Me
 
 (BASIC) VTAB: consider non-INT cases as done with TAB and COLOR
 (BASIC) DIM: add assignment `70 FLAGS(I) = 1`
@@ -57,16 +57,6 @@ ldx XYZ     ; loads .X with lo-byte of XYZ
 ldy XYZ+1   ; loads .Y with hi-byte of XYZ
 ```
 
-### CREATE NEW BASIC AUTORUN HEADER WITH TIMER
-
-Create new basic_header.a65 that runs a TIMER:
-```
-    10 PRINT INITIAL TIME
-    20 CALL 2064
-    30 PRINT FINAL TIME
-    40 PRINT ELAPSED TIME
-    <6502 CODE>
-```
 ### CREATE NEW BASIC COMMAND
 
 SETCOLOR: New BASIC command to change the 16-color palette

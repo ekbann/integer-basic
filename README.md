@@ -1,12 +1,14 @@
-# Integer BASIC aka Game BASIC Compiler aka GBC
+# Game BASIC Compiler (GBC)
 
-Why? When I first heard about the cool project Commander X16, the best 8-bit computer with modern still-available components, I wanted to play with it. Fortunately they had an emulator for users to start developing software. Using the CC65 compiler suite, I did the simple "Hello, World!" test using `printf()` and the result was an enormous executable. I thought that I could do better and more efficiently and that was enough reason and an excuse for me to go back to my first love, compiler design.
+Why? When I first heard about the cool project Commander X16, the best 8-bit computer with modern still-available components, I wanted to play with it. Fortunately they had an emulator for users to start developing software. Using the CC65 compiler suite, I did the simple "Hello, World!" test using `printf()` and the result was an enormous executable. I thought that I could do better and more efficiently and that was enough reason and an excuse for me to go back to my first love, compiler design. I chose Woz's Integer BASIC as a model simply because it had a very simple grammar without floating-point complexities.
 
-Why write a 6502 compiler? I am a BIG fan of 8-bit computers such as the Commodore 64 and Apple ][ family. The Commander X16 has a boosted 8MHz 65c02 CPU, 2MB of banked RAM along with the main 64K memory, and an advanced audio/graphics called the VERA. This compiler will hopefully generate fast assembly code.
+Why a 6502 compiler? I am a BIG fan of 8-bit computers such as the Commodore 64 and Apple ][ family. The Commander X16 has a boosted 8MHz 65c02 CPU, 2MB of banked RAM along with the main 64K memory, and an advanced audio/graphics called the VERA. This compiler will hopefully generate fast assembly code.
 
 Why BASIC? The BASIC language is a proven and very capable programming language that has a very simple grammar. Woz said that BASIC is "not a real super structured language where you have to learn so much about the structure. It's better to learn structure from the ground up, the basic atoms. Which is what BASIC is. To learn the structure from the ground up, once you've learned it you will apply it in a structured language. Then you're ready for it." Also, it is not  hard to translate into 6502 assembly language because of its similarities like GOTO/JMP and GOSUB/JSR.
 
 Why integers? As Woz famously said, "all you need for games is integers," such that he sometimes refers to it as Game BASIC. While it can run in integer mode only (so I can beat all of the available INT benchmarks), I am adding fixed-point signed Q16.16 capability to render beautiful Mandebrot plots (it will perform better than other BASIC with floating-point math). Adding real number mathematics is the hard part. There are no MUL or DIV on the 6502 instruction set, that means doing bit SHIFTs and ROTATEs manually.
+
+Game BASIC Compiler eventually evolved with the addition of signed fixed-point arithmetics (Q16.16). The 16-bit integer part perfectly integrates with the 16-bit mantissa part without needing any conversion from fixed-point to integer and vice-versa.
 
 ### BENCHMARK
 
@@ -17,8 +19,8 @@ Platform | Time
 Commodore 64 BASIC | 315 s
 Applesoft BASIC | 200 s
 Apple Integer BASIC | 166 s
-Commodore BASIC 2.0 (X16) | 42.35 s
-Compiled Integer BASIC (X16) | 4.17 s
+Commander X16 BASIC 2.0 | 42.35 s
+Game BASIC Compiler (X16) | 4.17 s
 cc65 original C program (X16) | 0.75 s
 Prog8 C program conversion (X16) | 0.25 s
 
