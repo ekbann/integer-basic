@@ -35,8 +35,8 @@ BASIC (AS) or GW-BASIC (GW):
 * HOME (AS) : Clear text display
 * LOCATE r,c (GW) : Move cursor to the specified position
 * GET (AS) : Read single key
-* STACK : Print the current STACK
-* DIM ARY(X) : Creates an array with X+1 elementes; ARY(0)..ARY(X)
+* STACK : Print the current STACK; May not be useful
+* `DIM ARY(X)` : Creates an array with X+1 elementes; ARY(0)..ARY(X)
 
 ### IMPORTANT
 
