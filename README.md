@@ -10,7 +10,7 @@ Why integers? As Woz famously said, "all you need for games is integers," such t
 
 ### BENCHMARK
 
-In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was less important but array access and looping performance dominated. Results below are for 1 iteration only:
+In the Byte Sieve (https://en.wikipedia.org/wiki/Byte_Sieve), where math was less important (only integer operations) but array access and looping performance dominated, we obtain the results below (for 1 iteration only):
 
 Platform | Time
 --- | ---
@@ -22,7 +22,7 @@ Compiled Integer BASIC (X16) | 4.17 s
 cc65 original C program (X16) | 0.75 s
 Prog8 C program conversion (X16) | 0.25 s
 
-Where GBC will shine is during fixed-point operations.
+Game BASIC Compiler will really shine during fixed-point operations.
 
 ### IMPLEMENTATION
 
@@ -51,6 +51,7 @@ Debugging can be done by editing the A65 assembly source and add the following i
 * `stp` - 6502 SToP instruction which pauses program execution and enter the X16 debugger; needs `-debug` option
 * `LoadAddress <label>` - loads the address of `<label>` into the `r0` register; easy to see in the debugger
 * `MoveW <var_id>,r0` - loads the **value** from variable `<var_id>` into the `r0` register
+* `TIME` - use this BASIC command to print the BASIC timer in jiffies (1/60 s) in 24-bit hexadecimal
 
 Remember not to compile directly from BAS source otherwise that will overwrite the edited A65 assembly source.
 
