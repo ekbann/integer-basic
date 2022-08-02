@@ -100,6 +100,7 @@ basic_grammar = """
               | COMMENT -> comment
               | "POP" -> pop
               | "GR" -> gr
+              | "MGR" -> mgr
               | "TEXT" -> text
               | "PLOT" expression "," expression -> plot
               | "HLIN" expression "," expression "AT" expression -> hlin
@@ -331,11 +332,29 @@ def compile(t):
             print("\t\tjsr CHROUT")
 
         ###
-        ### GR
+        ### GR = Lo-Res 40x30
         ###
         elif t.data == 'gr':
             # Set 40x30 mode
             print("\t\tlda #$03\t\t; SCREEN MODE 3, 40x30")
+            print("\t\tclc")
+            print("\t\tjsr screen_mode")
+            #print("BCS FAILURE") ==> No check for failures
+            # Set black background color
+            print("\t\tlda #$90\t\t; SET FOREGROUND COLOR TO BLACK")
+            print("\t\tjsr CHROUT")
+            print("\t\tlda #$01\t\t; SWAP FOREGROUND AND BACKGROUND COLOR")
+            print("\t\tjsr CHROUT")
+            # Clear screen to black
+            print("\t\tlda #HOME")
+            print("\t\tjsr CHROUT")
+
+        ###
+        ### MGR = Double Lo-Res 80x60 (default)
+        ###
+        elif t.data == 'gr':
+            # Set 80x60 mode
+            print("\t\tlda #$00\t\t; SCREEN MODE 0, 80x60")
             print("\t\tclc")
             print("\t\tjsr screen_mode")
             #print("BCS FAILURE") ==> No check for failures

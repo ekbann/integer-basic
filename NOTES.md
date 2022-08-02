@@ -18,6 +18,7 @@ BASIC (AS), GW-BASIC (GW), and my very own additions to GAME BASIC (GB):
 * TAB x (IB) : Where x=1-40 same as HTAB (AS)
 * VTAB x (IB) : Where x=1-24, but X16 has a 40x30 mode meaning x=1-30
 * POP (IB) : Convert last GOSUB into a GOTO
+* MGR (GB) : Adds "Double Lo-Res" 80x60 mode for the X16 (default screen)
 
 ### STACK
 
