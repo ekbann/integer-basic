@@ -2,10 +2,9 @@
 .include "./includes/header.inc"
 
 L10:		; REM TEST PRINT LOOP WITH <VAR_ID>
-L15:		jsr TIME
 L20:		PushInt 0
 		PullVar AX
-		PushInt 35
+		PushInt 15
 		PullVar AXEND
 		PushInt 1
 		PullVar AXSTEP
@@ -28,11 +27,11 @@ L40:		PushVar AX
 		PullVar AX
 		jmp LOOP1
 LOOP1END:
-L45:		StoreImm 6969,r0
+L42:		StoreImm 0,r0
 		ldy #0
 		jsr PrSgnDec16
 		PrintNewline
-L48:		jsr TIME
+L45:		; REM PRINT 6969
 L50:		rts
 
 AX:		.res 4

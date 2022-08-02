@@ -1,4 +1,39 @@
-# Implementation Notes:
+# IMPLEMENTATION NOTES
+
+### INTEGER BASIC COMMANDS
+
+Implements Woz's Integer BASIC with a few additional commands from Applesoft
+BASIC (AS), GW-BASIC (GW), and my own additions as GAME BASIC (GB):
+
+* DATA (AS) : Define inline data; can be literals (unquoted strings), strings or numbers
+* READ (AS) : Read the next DATA value
+* RESTORE (AS) : Restore the DATA pointer to the first value
+* HOME (AS) : Clear text display
+* LOCATE r,c (GW) : Move cursor to the specified position
+* GET (AS) : Read single key
+* STACK (GB): Print the current STACK; May not be very useful
+* TIME (GB): Print the current time from boot-up in jiffies (1/60 sec); from C64
+* `DIM ARY(X)` : Creates an array with X+1 elementes; ARY(0)..ARY(X)
+* `A=SCRN(X,Y)` returned the color of the screen at X,Y.
+
+### STACK
+
+From Apple 1 BASIC:
+https://github.com/jefftranter/6502/blob/master/asm/a1basic/a1basic.s
+
+The noun stack and syntax stack appear to overlap, which is OK since
+they apparently are not used simultaneously. The noun stack size appears
+to be 32 entries.
+
+```
+        Noun stack usage appears to be:
+            integer: value
+            string: pointer to string
+```
+
+`GOSUB` stack, max eight entries, note that the Apple II version has sixteen entries. `FOR` stack, max eight entries, note that the Apple II version has sixteen entries.
+
+### STRINGS
 
 Integer BASIC's string handling was based on the system in HP BASIC. This
 treated string variables as arrays of characters which had to be DIMed prior
@@ -13,25 +48,24 @@ This had the advantage of avoiding the need for the garbage collection of the
 heap that was notoriously slow in MS BASIC but meant that strings that
 were shorter than the declared length was wasted.
 
+String output uses the C64 standard KERNAL function: `CHROUT` ($FFD2)
+
+```
+The CHROUT kernal routine is located at $FFD2 (65490).
+
+This routine will translate the value on the Accumulator register to a character code, and output to the default output device. This is generally the screen unless the OPEN and then CHKOUT routines were previously called to change the default output device.
+
+Real address of Kernal routine: $F1CA.
+```
+
+### INTEGER NUMBERS
+
 Integer BASIC, as its name implies, uses signed integers as the basis for its
 math package. These were stored internally as a 16-bit number, little-endian (as
 is the 6502). This allowed a maximum value for any calculation between -32767
 and 32767. No fraction, just QUOTIENT (/) and REMAINDER (MOD).
 
-Only single-dimension arrays were allowed, limited in size only by the available
-memory.
-
-Integer BASIC used the parameter in RND(6) which returned an integer from 0 to 5.
-
-The position of the controller could be read using the PDL function, passing
-in the controller number, 0 or 1, like A=PDL(0):PRINT A, returning a value
-between 0 and 255.
-
-A=SCRN(X,Y) returned the color of the screen at X,Y.
-
-Integer BASIC included a POP command to exit from loops. This popped the
-topmost item off the FOR stack. Atari BASIC also supported the same command,
-while North Star BASIC used EXIT.
+### FLOATING/FIXED POINT
 
 Although Integer BASIC contained its own math routines, the Apple II ROMs
 also included a complete floating-point library located in ROM memory between
@@ -39,27 +73,181 @@ $F425-F4FB and $F63D-F65D. The source code was included in the Apple II
 manual. BASIC programs requiring floating-point calculations could CALL into
 these routines.
 
-From Apple 1 BASIC:
-https://github.com/jefftranter/6502/blob/master/asm/a1basic/a1basic.s
+### DIM ARRAYS
 
-The noun stack and syntax stack appear to overlap, which is OK since
-they apparently are not used simultaneously. The noun stack size appears
-to be 32 entries.
+Only single-dimension arrays were allowed, limited in size only by the available
+memory.
 
-        Noun stack usage appears to be:
-            integer: value
-            string: pointer to string
+### RANDOM NUMBERS
 
-GOSUB stack, max eight entries, note that the Apple II version has sixteen entries.
+Integer BASIC used the parameter in RND(6) which returned an integer from 0 to 5.
 
-FOR stack, max eight entries, note that the Apple II version has sixteen entries.
+### PADDLE CONTROLLERS
 
-ASCII  32 ($20) = SPACE
-ASCII 160 ($A0) = Non-breaking SPACE (32 + 128, hight bit set). EOL last character is unset.
-TAB does horizontal tab by printing ASCII 160
+The position of the controller could be read using the PDL function, passing
+in the controller number, 0 or 1, like `A=PDL(0):PRINT A`, returning a value
+between 0 and 255.
 
-36      | $24         | Horizontal cursor-position (0-39)
-37      | $25         | Vertical cursor-position (0-23)
+### CONTROL FLOW
+
+Integer BASIC included a POP command to exit from loops. This popped the
+topmost item off the FOR stack. Atari BASIC also supported the same command,
+while North Star BASIC used EXIT.
+
+### ERROR MESSAGES
+
+```
+        ">32767"
+        "TOO LONG"
+        "SYNTAX"
+        "MEM FULL"
+        "TOO MANY PARENS"
+        "STRING"
+        "NO END"
+        "BAD BRANCH"
+        ">8 GOSUBS"
+        "BAD RETURN"
+        ">8 FORS"
+        "BAD NEXT"
+        "STOPPED AT "
+        "*** "
+        " ERR.\n"
+        ">255"
+        "RANGE"
+        "DIM"
+        "STR OVFL"
+        "\\\n"
+        "RETYPE LINE\n"
+        "?"
+```
+
+### LO-RES GRAPHICS (80x60) and (40x30)
+
+COLOR |NAME	| PETSCII CODE | CHR$(X)
+--- | --- | --- | ---
+0 | Black | 144 | $90
+1 | White | 5 | $05
+2 | Red | 28 | $1c
+3 | Cyan | 159 | $9f
+4 | Purple | 156 | $9c
+5 | Green | 30 | $1e
+6 | Blue | 31 | $1f
+7 | Yellow | 158 | $9e
+8 | Orange | 129 | $81
+9 | Brown | 149 | $95
+A | Light Red | 150 | $96
+B | Dark Grey | 151 | $97
+C | Grey | 152 | $98
+D | Light Green | 153 | $99
+E | Light Blue | 154 | $9a
+F | Light Grey | 155 | $9b
+
+```
+COLOR <color code>
+<color code> = $<BG nibble><FG nibble>
+```
+
+E.g. `COLOR $14` is BLUE on WHITE
+    `COLOR $41` is default WHITE on BLUE
+
+You can use PETSCII codes to set both background and foreground color:
+
+```
+10 PRINT CHR$($81):REM SET FOREGROUND COLOR TO ORANGE
+20 PRINT CHR$($01):REM SWAP FOREGROUND- AND BACKGROUND COLOR
+30 PRINT CHR$($1F):REM SET FOREGROUND COLOR TO BLUE
+40 PRINT "THIS TEXT IS BLUE ON ORANGE BACKGROUND"
+```
+
+Textmode, either 80x60 or 40x30, you can use the `screen_set_mode` call.
+
+Modes:
+
+The editor's default mode is 80x60 text mode. The following text mode resolutions are supported:
+
+```
+Mode | Description
+--- | ---
+$00 | 80x60 text
+$01 | 80x30 text
+$02 | 40x60 text
+$03 | 40x30 text
+$04 | 40x15 text
+$05 | 20x30 text
+$06 | 20x15 text
+$80 | 320x200@256c/40x25 text
+```
+
+Mode $80 contains two layers, a text layer on top of a graphics screen. In this mode, text color 0 is translucent instead of black:
+
+```
+^  Z=3 sprites
+|  Layer 1
+|  Z=2 sprites
+|  Layer 0
+|  Z=1 sprites
+|  Background color (palette entry #0)
+```
+
+To switch modes, use the BASIC statement SCREEN or the KERNAL API screen_mode. In BASIC, the F4 key toggles between modes 0 (80x60) and 3 (40x30).
+
+```
+$FF5F: screen_mode - get/set screen mode
+
+Function Name: screen_mode
+Purpose: Get/Set the screen mode
+Call address: $FF5F
+Communication registers: .A, .X, .Y, .C
+Preparatory routines: None
+Error returns: .C = 1 in case of error
+Stack requirements: 4
+Registers affected: .A, .X, .Y
+
+Description: If .C is set, a call to this routine gets the current screen mode in .A, the width (in tiles) of the screen in .X, and the height (in tiles) of the screen in .Y. If .C is clear, it sets the current screen mode to the value in .A. For a list of possible values, see the basic statement SCREEN. If the mode is unsupported, .C will be set, otherwise cleared.
+```
+
+Example:
+
+```
+LDA #$80
+CLC
+JSR screen_mode ; SET 320x200@256C MODE
+BCS FAILURE
+```
+
+NTSC Apple II Lo-Res Colors RGB Values in sRGB color space:
+
+Lo-res mode colors:
+
+COLOR | NAME | RGB
+--- | --- | ---
+0 | black | 0x000000
+1 | red | 0x8a2140
+2 | dark blue | 0x3c22a5
+3 | pink | 0xc847e4
+4 | dark green | 0x07653e
+5 | dark gray | 0x7b7e80
+6 | mid blue | 0x308fe3
+7 | light blue | 0xb9a9fd
+8 | brown | 0x3b5107
+9 | orange | 0xc77028
+10 | light gray | 0x7b7e80
+11 | apricot | 0xf39ac2
+12 | light green | 0x2fb81f
+13 | yellow | 0xb9d060
+14 | aqua | 0x6ee1c0
+15 | white | 0xf5faff
+
+### HORIZONTAL TAB DETAILS (APPLE)
+
+* ASCII  32 ($20) = SPACE
+* ASCII 160 ($A0) = Non-breaking SPACE (32 + 128, hight bit set). EOL last character is unset.
+* TAB does horizontal tab by printing ASCII 160
+
+DEC | HEX | DESCRIPTION
+--- | --- | ---
+36 | $24 | Horizontal cursor-position (0-39)
+37 | $25 | Vertical cursor-position (0-23)
 
  ```
         ch      =       $24     ; horizontal cursor location
@@ -102,167 +290,3 @@ ESC       = #$9B
                 STA     DSP          ; Write display data
                 RTS                  ; and return
 ```
-
-Error message strings. Last character has high bit unset:
-
-```
-        ">32767"
-        "TOO LONG"
-        "SYNTAX"
-        "MEM FULL"
-        "TOO MANY PARENS"
-        "STRING"
-        "NO END"
-        "BAD BRANCH"
-        ">8 GOSUBS"
-        "BAD RETURN"
-        ">8 FORS"
-        "BAD NEXT"
-        "STOPPED AT "
-        "*** "
-        " ERR.\n"
-        ">255"
-        "RANGE"
-        "DIM"
-        "STR OVFL"
-        "\\\n"
-        "RETYPE LINE\n"
-        "?"
-```
-
-FP routines in ROM at locations $f425-f4fb and $f63d-f65d. Source code in Apple II Manual.
-
-## LO-RES GRAPHICS
-
-COLOR	NAME			PETSCII CODE/CHR$(X)
----
-0	Black			144	$90
-1	White			5	$05
-2	Red			28	$1c
-3	Cyan			159	$9f
-4	Purple			156	$9c
-5	Green			30	$1e
-6	Blue			31	$1f
-7	Yellow			158	$9e
-8	Orange			129	$81
-9	Brown			149	$95
-A	Light Red		150	$96
-B	Dark Grey		151	$97
-C	Grey			152	$98
-D	Light Green		153	$99
-E	Light Blue		154	$9a
-F	Light Grey		155	$9b
-
-```
-COLOR <color code>
-<color code> = $<BG nibble><FG nibble>
-```
-
-E.g.	COLOR $14 is BLUE on WHITE
-	COLOR $41 is default WHITE on BLUE
-
-You can use PETSCII codes to set both background and foreground color:
-
-```
-10 PRINT CHR$($81):REM SET FOREGROUND COLOR TO ORANGE
-20 PRINT CHR$($01):REM SWAP FOREGROUND- AND BACKGROUND COLOR
-30 PRINT CHR$($1F):REM SET FOREGROUND COLOR TO BLUE
-40 PRINT "THIS TEXT IS BLUE ON ORANGE BACKGROUND"
-```
-
-Textmode, either 80x60 or 40x30, you can use the screen_set_mode call.
-
-Modes:
-
-The editor's default mode is 80x60 text mode. The following text mode resolutions are supported:
-
-```
-Mode	Description
-$00	80x60 text
-$01	80x30 text
-$02	40x60 text
-$03	40x30 text
-$04	40x15 text
-$05	20x30 text
-$06	20x15 text
-$80	320x200@256c/40x25 text
-```
-
-Mode $80 contains two layers: a text layer on top of a graphics screen. In this mode, text color 0 is translucent instead of black.
-
-To switch modes, use the BASIC statement SCREEN or the KERNAL API screen_mode. In BASIC, the F4 key toggles between modes 0 (80x60) and 3 (40x30).
-
-$FF5F: screen_mode - get/set screen mode
-
-Function Name: screen_mode
-Purpose: Get/Set the screen mode
-Call address: $FF5F
-Communication registers: .A, .X, .Y, .C
-Preparatory routines: None
-Error returns: .C = 1 in case of error
-Stack requirements: 4
-Registers affected: .A, .X, .Y
-
-Description: If .C is set, a call to this routine gets the current screen mode in .A, the width (in tiles) of the screen in .X, and the height (in tiles) of the screen in .Y. If .C is clear, it sets the current screen mode to the value in .A. For a list of possible values, see the basic statement SCREEN. If the mode is unsupported, .C will be set, otherwise cleared.
-
-EXAMPLE:
-
-```LDA #$80
-CLC
-JSR screen_mode ; SET 320x200@256C MODE
-BCS FAILURE```
-
----
-
-Function Name: console_put_char
-Signature: void console_put_char(byte char: .a, bool wrapping: .c);
-Purpose: Print a character to the console.
-Call address: $FEDE
-
-Description: This function prints a character to the console. The .C flag specifies whether text should be wrapped at character (.C=0) or word (.C=1) boundaries. In the latter case, characters will be buffered until a SPACE, CR or LF character is sent, so make sure the text that is printed always ends in one of these characters.
-
-Note: If the bottom of the screen is reached, this function will scroll its contents up to make extra room.
-
-## Applesoft Colors
-
-Lo-res mode colors:
----
-0 - black
-1 - red
-2 - dark blue
-3 - pink
-4 - dark green
-5 - dark gray
-6 - mid blue
-7 - light blue
-8 - brown
-9 - orange
-10 - light gray
-11 - apricot
-12 - light green
-13 - yellow
-14 - aqua
-15 - white
-
-The numbers in square brackets are the lores color numbers (COLOR= in
-Applesoft). The hires colors (HCOLOR= in Applesoft) are marked with an
-asterisk.
-
-NTSC Apple II Colors RGB Values in sRGB color space
----
-R, G, B [ 0] = 0x000000 * Hires 0, 3
-R, G, B [ 1] = 0x8a2140
-R, G, B [ 2] = 0x3c22a5
-R, G, B [ 3] = 0xc847e4 * Hires 2
-R, G, B [ 4] = 0x07653e
-R, G, B [ 5] = 0x7b7e80
-R, G, B [ 6] = 0x308fe3 * Hires 6
-R, G, B [ 7] = 0xb9a9fd
-R, G, B [ 8] = 0x3b5107
-R, G, B [ 9] = 0xc77028 * Hires 5
-R, G, B [10] = 0x7b7e80
-R, G, B [11] = 0xf39ac2
-R, G, B [12] = 0x2fb81f * Hires 1
-R, G, B [13] = 0xb9d060
-R, G, B [14] = 0x6ee1c0
-R, G, B [15] = 0xf5faff * Hires 4 & 7

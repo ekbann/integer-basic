@@ -19,26 +19,13 @@ Platform | Time
 Commodore 64 BASIC | 315 s
 Applesoft BASIC | 200 s
 Apple Integer BASIC | 166 s
+Apple IIgs | 999 s
 Commander X16 BASIC 2.0 | 42.35 s
 Game BASIC Compiler (X16) | 4.17 s
 cc65 original C program (X16) | 0.75 s
 Prog8 C program conversion (X16) | 0.25 s
 
 Game BASIC Compiler will really shine during fixed-point operations.
-
-### IMPLEMENTATION
-
-Implements Woz's Integer BASIC with a few additional commands from Applesoft
-BASIC (AS) or GW-BASIC (GW):
-
-* DATA (AS) : Define inline data; can be literals (unquoted strings), strings or numbers
-* READ (AS) : Read the next DATA value
-* RESTORE (AS) : Restore the DATA pointer to the first value
-* HOME (AS) : Clear text display
-* LOCATE r,c (GW) : Move cursor to the specified position
-* GET (AS) : Read single key
-* STACK : Print the current STACK; May not be useful
-* `DIM ARY(X)` : Creates an array with X+1 elementes; ARY(0)..ARY(X)
 
 ### IMPORTANT
 
