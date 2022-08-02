@@ -1,10 +1,12 @@
 # TODO
 
+* Check if `PRINT <expr> [ [;,] <expr> ... ] [;]` is implemented correctly
+
 * Add `FETCH/FPFETCH` to get data from address on TOS; data replaces address at TOS => improve DIM_SET/DIM_VAL code output
 
 * DIM arrays can be "banked" into 256-bytes pages ($100 aligned) -> can use .Y indexed per page. Only for BYTE sized DIMs? What about 16-bit INTs? Perhaps "page" them in BANKED RAM and do page switching as needed. 8K array => 8191/256 = 32 "pages" => fits in one X16 banked RAM PAGE
 
-* LT function is fixed; check other LOGIC_OPs for similar bug
+* `LT` function is fixed; check other LOGIC_OPs for similar bug
 
 * read about BSS versus RES assembler directives to avoids inflated PRG executable
 
@@ -15,8 +17,8 @@
 * Maybe add `LOADADDRESS <VAR_ID>` BASIC command to load any variable address to r0 for easy inspection like STACK followed by `stp`:
 
 ```
-    		LoadAddress ARY
-		stp
+    	LoadAddress ARY
+	stp
 ```
 
 ## Fix/Finish Me

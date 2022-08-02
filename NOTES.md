@@ -2,8 +2,8 @@
 
 ### INTEGER BASIC COMMANDS
 
-Implements Woz's Integer BASIC with a few additional commands from Applesoft
-BASIC (AS), GW-BASIC (GW), and my own additions as GAME BASIC (GB):
+Implements Woz's Integer BASIC (IB) with a few additional commands from Applesoft
+BASIC (AS), GW-BASIC (GW), and my very own additions to GAME BASIC (GB):
 
 * DATA (AS) : Define inline data; can be literals (unquoted strings), strings or numbers
 * READ (AS) : Read the next DATA value
@@ -14,9 +14,21 @@ BASIC (AS), GW-BASIC (GW), and my own additions as GAME BASIC (GB):
 * STACK (GB): Print the current STACK; May not be very useful
 * TIME (GB): Print the current time from boot-up in jiffies (1/60 sec); from C64
 * `DIM ARY(X)` : Creates an array with X+1 elementes; ARY(0)..ARY(X)
-* `A=SCRN(X,Y)` returned the color of the screen at X,Y.
+* `A=SCRN(X,Y)` : Returns the color of the screen at X,Y
+* TAB x (IB) : Where x=1-40 same as HTAB (AS)
+* VTAB x (IB) : Where x=1-24, but X16 has a 40x30 mode meaning x=1-30
+* POP (IB) : Convert last GOSUB into a GOTO
 
 ### STACK
+
+Game BASIC has a 12 element 4-byte stack.
+
+SIH | SIL | SFH | SFL | LEVEL
+--- | --- | --- | --- | ---
+. | . | . | . | 3
+. | . | . | . | 2
+. | . | . | . | 1
+. | . | . | . | 0 <- FPSP
 
 From Apple 1 BASIC:
 https://github.com/jefftranter/6502/blob/master/asm/a1basic/a1basic.s
@@ -26,9 +38,9 @@ they apparently are not used simultaneously. The noun stack size appears
 to be 32 entries.
 
 ```
-        Noun stack usage appears to be:
-            integer: value
-            string: pointer to string
+Noun stack usage appears to be:
+        integer: value
+        string: pointer to string
 ```
 
 `GOSUB` stack, max eight entries, note that the Apple II version has sixteen entries. `FOR` stack, max eight entries, note that the Apple II version has sixteen entries.
@@ -89,6 +101,23 @@ in the controller number, 0 or 1, like `A=PDL(0):PRINT A`, returning a value
 between 0 and 255.
 
 ### CONTROL FLOW
+
+* `GOTO` (IB) : `GOTO <INT>` and `GOTO <expr>` except `GOTO 10+10`
+* `GOTO` (AS) : Only allows `GOTO <INT>`; Same behavior seen in C64 BASIC
+
+To implement `GOTO <expr>` (IB) is complicated. The `<expr>` will result in an `<INT>` value during execution and we must somehow convert that integer into a physical memory address of the equivalent line label `L<INT>`.
+
+One way to solve this problem is to implement a `line_lookup_table` during compile-time:
+
+INT | ADDRESS | LABEL
+--- | --- | ---
+10 | $091c | L10
+20 | $093f | L20
+etc. | etc. | etc.
+
+And write a function `line_lookup` which scans this table using the INT as the index to obtain the `JMP` address.
+
+The easiest way is to implement the `ON <expr> GOTO <linenum> [, linenum ...]` (AS) and `ON <expr> GOSUB <linenum> [, linenum ...]` (AS) which branches based on index `<expr>`.
 
 Integer BASIC included a POP command to exit from loops. This popped the
 topmost item off the FOR stack. Atari BASIC also supported the same command,
@@ -165,7 +194,6 @@ Modes:
 
 The editor's default mode is 80x60 text mode. The following text mode resolutions are supported:
 
-```
 Mode | Description
 --- | ---
 $00 | 80x60 text
@@ -175,8 +203,8 @@ $03 | 40x30 text
 $04 | 40x15 text
 $05 | 20x30 text
 $06 | 20x15 text
-$80 | 320x200@256c/40x25 text
-```
+$80 | 40x25 text, or
+$80 | 320x200x256
 
 Mode $80 contains two layers, a text layer on top of a graphics screen. In this mode, text color 0 is translucent instead of black:
 
