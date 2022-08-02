@@ -19,11 +19,11 @@ Platform | Time
 Commodore 64 BASIC | 315 s
 Applesoft BASIC | 200 s
 Apple Integer BASIC | 166 s
-Apple IIgs | ? s
+Apple IIgs BASIC | 98 s
 Commander X16 BASIC 2.0 | 42.35 s
 Game BASIC Compiler (X16) | 4.17 s
 cc65 original C program (X16) | 0.75 s
-Prog8 C program conversion (X16) | 0.25 s
+Prog8 converted C program (X16) | 0.25 s
 
 Game BASIC Compiler will really shine during fixed-point operations.
 
