@@ -1,0 +1,230 @@
+GARTHWILSON @ http://forum.6502.org/
+http://WilsonMinesCo.com/ lots of 6502 resources
+http://forum.6502.org/viewtopic.php?t=716
+Thu Sep 29, 2005
+
+### Beyond Integers
+
+### Installment #1: Introduction to scaled-integer arithmetic (or: "Why you probably don't need floating-point")
+
+What would you think if someone told you you don't need floating-point to do logarithms, inverses and fractions, trig, roots, digital signal processing functions, or handle gigantic ranges of numbers?
+
+I was skeptical at first. It took me awhile to fully accept the idea, but years later now it seems like the only time I use floating-point is when I pick up my calculator. Floating-point has its place and is essential for some applications, but not as many as popularly thought.
+
+You may have done some simple arithmetic on your 6502 creations but wonder how you could ever get past multiple-precision addition and subtraction. Imagine getting where you want to go with your project without the overhead and complexity of floating-point. Well, here it is.
+
+http://home.iae.nl/users/mhx/sf5/sf5.html is chapter 5 of Leo Brodie's book "Starting Forth". [Edit: now Forth, Inc. has it with the original pictures here.] Starting about a third of the way down, it gives a reasonable introduction to fixed- versus floating-point math. Even if you're not familiar with Forth, it will still be mostly understandable, since it's mostly about the ranges and representations of numbers and not so much about how to do it in a particular programming language. (Don't even think about getting into Forth though, unless you want unlimited freedom and a several-times increase in productivity!)
+
+Brodie says, "Fixed-point arithmetic is simply a method of storing numbers in memory without storing the position of each number's decimal point. For example, in working with dollars and cents, the values can all be stored in cents. The program, rather than each individual number, keeps track of the decimal point." Although it requires that the programmer pay closer attention to maximze use of the available range of numbers without overflowing that range, it removes a lot of run-time overhead, and lets you get away with a smaller, simpler kernel.
+
+Fixed-point is a special simple case of scaled-integer arithmetic, where the basic unit is represented by a whole number. In the case of dollars and cents above, one dollar will be represented by exactly 100. Scaled-integer is not always this way though. In the case of angles or portions of a circle, various factors make it work out nicely to represent the circle with 65,536 if you have 16-bit cells. This means that each increment in the 16-bit cell is .0054932°, or .000095874 radians. One radian is approximately 10,430.4/65,536 of a circle. One degree is approximately 188.044/65,536 of a circle. Our 16-bit representation of 1 radian will be 28BE in hex. The representation for 1° will be B6. Why the oddball numbers? Consider that -90° is the same as +270°, +370° is the same as +10°, etc.. The natural wrap-around is appropriate; and without using floating-point, our resolution is still better than 20 arc-seconds.
+
+In the case of the dollar above, every penny is represented by exactly one increment in the 16-bit cell (or 32-bit double number if we want to exceed 655 dollars and 36 cents in positive-only numbers, or +$327.67 to -$327.68 if negative numbers are allowed). That's fixed-point. In the case of the angles, we don't have an exact representation, or a nice place to put a decimal point regardless of number base, for the radian which is the unit used for calculating the trig functions, or even for the degree. We use scaled-integer here but not fixed-point per se.
+
+All the functions we will be talking about can be pieced together with with components no more complicated than addition, subtraction, multiplication, and division. Well explained unsigned 6502 division routines can be found at http://www.6502.org/source/integers/umm ... modfix.htm . Bruce has another article in the works. http://www.6502.org/forum/viewtopic.php?t=689 has routines to multiply two 16-bit unsigned numbers to get a 32-bit result. http://www.6502.org/source/integers/32muldiv.htm has routines to do 32-bit multiplications with a 64-bit result, and the vice-versa with division.
+
+Often you'll want the division results to be rounded instead of truncated. To do that, add half the divisor's value into the dividend before dividing, and just drop the remainder after the division. (The divisor is the number you're dividing by. If you write the division problem like a fraction, the divisor is the denominator-- the number under the line.)
+
+### Installment #2: Staying within bounds
+
+Clearly you will want to use the 16-bit range to your advantage, without getting the numbers so big that they overflow while you're working on them. How do you do this? Suppose you had a number, 26,541 (in base ten) and wanted to multiply it by 2/3. Since 2/3 is between integers, the closest representation you can get directly (without scaling) is 1; but multiplying your 26,541 by 1 is not very useful and does not do what you're looking for.
+
+If we first multiply by 2 and then divide the result by 3, we get 53,082, and finally 17,694. Unfortunately if we're using signed numbers, the 53,082 will get interpreted as a negative number (since the high bit of the 16-bit cell is set) and we end up with -12,454/3 which is -4,151, which is wrong any way you look at it. Even if we were not using signed numbers, you can see that multiplying anything above 32,767 by 2 will overflow. One thing we could do is to scale our numbers lower to avoid this, but then what if we need to multiply by 1.07? Leaving room to multiply by 107 and then divide by 100 sure wipes out a lot of our working range.
+
+The better route is to use double-precision intermediate results. If we are calling 16 bits (two bytes) our standard cell size, then a double-precision number is represented by a 32-bit (four-byte) number, regardless of how many bits we actually need in the particular case. Now you could even take your 26,541 and multiply by 107 to get 2,839,887, and then divide by 100 to get the final result of 28,399 (rounded), which fits into a 16-bit cell just fine. In fact, Forth has an operator called */ (pronounced "star-slash") for precisely that purpose-- take the first number, multiply by the second to yield a double-precision intermediate result, and divide by the third, to get the final result in single-precision. I'll add another one later that rounds the result instead of just throwing away the fractional part or leaving it for separate treatment.
+
+Nearly any constant you might use in the range of ±0.000030519 to 32767 (or ±0.000015259 to 65,535 if using unsigned numbers) can be approximated with different pairs of integers used as a fraction, most having an accuracy of at least 8 digits. If you want to multiply a number by the square root of two for example, first multiply by 239 and then divide your double-precision intermediate result by 169. This ratio's error is only -0.00088%, which is good enough for 16-bit work. 19601/13860 would be good approximation for the square root of 2 for 24-bit work, as it gives an error of only 0.00000013% (1.3E-9).
+
+Since the denominator of the fraction can be 0, you can even represent infinity if you need to. Consider the tangent function, which we carry out by just returning both the sine and the cosine of the angle. (To get the cotangent, all you have to do is swap the two numbers.) Since they both range from -1 to +1, we can chose a scale factor of up to $7FFF, so -1 is represented by -$7FFF and +1 is represented by +$7FFF. The smallest possible increment in the output numbers is 1/32,767, or 0.000030519; yet non-negative outputs can range from 0/32,767 (for 0 at 0°), to 3/32,767 (for 0.00009 at 0.0055°), to 23,170/23,170 (for 1.00000 at 45°), to 32,767/3 (for 10,922 at 89.995°), to 32,767/0 (for infinity at 90°). Even without the "infinity at 90°", you would not be able to get this kind of range from a 16-bit cell; but if you go directly to a 32-bit tangent, it's less efficient to calculate, and less efficient to use in 16-bit arithmetic.
+
+Now you may have already thought ahead a little to the situation where a scaled number is squared, or is multiplied by another number with the same scale factor, effectively squaring the scale factor, which is undesirable. The */ operator (or its equivalent) is again used to do the multiplication and then divide the double-precision intermediate result by the scale factor. This undoes the squaring of the scale factor.
+
+To get more computational speed, you can use scale factors that reduce the division to nothing more than a logical-shift-right operation. $7FFF was used above for maximum precision in the sine, cosine, and tangent example since you cannot represent ±1 with ±$8000 in a 16-bit cell; but if you have an application where one bit less precision is plenty and you want more speed, you can change the scale factor to $4000, so dividing the 32-bit intermediate results by the $4000 is just a matter of shifting right 12 bit places.
+
+The issue of staying within bounds will be addressed almost continually as we progress further into scaled-integer arithmetic.
+
+
+
+Next up: scaled-integer & fixed-point I/O in number bases other than hex? introduce the data stack concept? Dive right into some algorithms?
+
+### Installment #3: The Data Stack (It's so practical. I just hope I won't regret introducing it so soon.)
+
+The data stack is not particularly tied to one kind of math or another (floating-point, fixed-point, etc.), but its self-maintaining property reduces the need to use variables for intermediate storage and prevents register conflicts. You don't have to worry about whether a variable or virtual register you're using for one routine might have another routine still depending on it to hold some data. Even in languages like BASIC that accept algebraic statements, internally the computer usually uses a data stack of some sort, even if it's the same stack as the return stack.
+
+I did my first big 6502 programming project in the late 1980's, in assembly. It was for an embedded system that went on a board a little smaller than Daryl Rictor's SBC-2. In my inexperience, I did several things that were not necessary or efficient. One of them was to do the math in floating-point, and in decimal, not hex. I determined that five bytes would accommodate the needed precision and exponent range, and had eight virtual processor registers in ZP for doing the math. I started with fewer, but kept adding another and another when I'd run into more conflicts in register usage. More of these meant I could have more calculations pending, but it also made it harder to standardize or keep track of what each register was being used for. I succeeded, but only by doing a lot of drive-you-crazy mental gymnastics. A stack of 5-byte cells would have been so much easier. And if I had done the math in hex and in fixed-point and scaled-integer, they could have been 2-byte cells, with some higher-precision intermediate results taking two cells.
+
+If you're reading this, you probably already know what the 6502's (or other processor's) hardware stack is. It is used primarily to store return addresses so the program counter knows where to go to get back to the calling routine when a subroutine is finished. You can go as many levels deep as you want, and there's no difficulty in keeping things straight. The housekeeping is automatic. The hardware stack can be used for several other purposes too, but setting up a separate stack for data to operate on and for passing parameters to subroutines gives a lightfootedness you won't get from using the hardware (return) stack alone.
+
+19th-century Polish logician Jan Lukasiewicz theorized that the most efficient way to do calculations was to use a stack, and let operators (like + - * / ^ etc) and functions (like LOG TAN COS etc) operate on the number (or numbers) at the top of the stack (TOS). The reverse notation of putting a couple of numbers on the stack and then telling the computer what to do with them, like 3 5 + instead of 3+5, is where the term "reverse Polish notation" (RPN) comes from, not from some joke about Polacks doing things in a backwards and senseless way.
+
+Suppose we had a stack with a 1 in the top cell, a 3 in the next, and so on, to some arbitrary depth:
+
+Code:
+TOS  1
+     3
+     5
+     7
+
+
+If you tell the computer to add (perhaps by calling a subroutine or macro named PLUS), the top two cells will be taken off and replaced with a 4, since 3 + 1 is 4. The result will be:
+
+Code:
+TOS  4
+     5
+     7
+
+Note that the 5 and the 7 (and anything else that might be under the 7) remains undisturbed, regardless of the depth. For the PLUS operation, you don't care what else is under there or how deep the stack is. It simply does not matter.
+
+If next you tell the computer to multiply (perhaps by calling a subroutine named MULT), the top two remaining cells will be taken off and replaced with 20, since 5 * 4 is 20:
+
+Code:
+TOS 20
+     7
+
+Suppose you wanted to divide that 20 by 2 now. Put the 2 on the stack. It will get pushed onto the top:
+
+Code:
+TOS  2
+    20
+     7
+
+Then divide (perhaps by calling a subroutine named DIV). You'll get:
+
+Code:
+TOS 10
+     7
+
+Hewlett-Packard calculators all used to work this way, calling the top of the stack (TOS) the X register, the next one (next on stack, or NOS) Y, the next one Z, and the last one T. If you're familiar with HP calculators from the 1980's, you've already got it down. The HP manuals always drew the stack up-side-down so X was always at the bottom and things get pushed up instead of down, but it's the same idea.
+
+There is nothing however that says a stack has to be limited to four levels like the Hewlett-Packard calculators had. When HP arrived at the 4-level stack, calculators were not programmable yet, so you did have to keep a mental note of what was on each level. There was no program running the process and keeping track of subroutines and their data stack usage, and HP determined that it was unrealistic to mentally keep track of more than four. When we move to programming, that runtime limitation is gone.
+
+You can have lots of nested subroutines, each one using data stack space and leaving operations pending until the completion of the subroutines they called. Letting the stack get really deep does not make it unwieldy. If, for example, each subroutine used only three levels (or less, as is often the case), then you're only concerned with those few cells at the time you're working on that routine-- regardless of how many levels are below it. In the diagrams above, you could have a hundred numbers under those top stack items we were dealing with, and it wouldn't matter. In fact, even the 7 never got touched in these examples. Subroutines automatically leave other subroutines' "scratchpad space" on the stack undisturbed. In fact, "recursion" refers to when a routine calls itself, even multiple nested levels deep, which a stack allows it to do. (As you might expect, it is important to make sure that the condition to back out of the recursion is met before you overrun the available stack space.)
+
+There are various ways to accommodate a data stack in 6502 memory. 6502 Forth implementations put the data stack in zero page because the stack is also used to calculate addresses, and indexed indirect addressing like LDA (zp,x) is needed for certain operations. For this math treatise, we will, at least initially, limit our use of such a data stack to just the math data we will operate on, and not addresses. This means that since the 6502's non-ZP addressing can be indexed (LDA abs,X being an example), you can put the data stack anywhere in RAM with only a small speed penalty, as discussed at http://www.6502.org/forum/viewtopic.php?t=493 and other places on the forum.
+
+I initially started writing the examples for a data stack with the low bytes starting at $03FF and growing downward as you add cells to the stack, and the high bytes starting at $04FF and growing downward; but I ran into a disadvantage in that the lack of an STY abs,X makes some code more awkward and inefficient, so I went back to putting the stack in ZP. And as long as it's in ZP, the possible future desire to use the high and low byte together as addresses for indirects means we might as well put the byte pairs together.
+
+For 16-bit cells, we'll need two bytes per cell. We will also need a pointer to tell where the top of the stack is. Index register X works best because of the available addressing modes. With the two bytes of each cell together now, pushing or pulling each stack item will consist of decrementing or incrementing X twice. Suppose we start at the high end of ZP for the data stack, and grow the stack downward (which is what happens with the return stack you're already familiar with). X could be initialized to 00. To push a number on the stack, we decrement X twice with DEX DEX, which puts X to $FE; then store the low byte with STA 0,X, re-load A as necessary, and store the high byte with STA 1,X. This means the low byte of the first stack item will get stored at $00FE, and the high byte will get stored at $00FF. If we want to put another 16-bit number on the stack, we do the same thing again. The exact same instructions and operands are used regardless of how deep the stack is at the time, or which routine is using them.
+
+Dropping the top stack cell is accomplished with INX INX. To make the function more clear in the code, you could make it a macro:
+
+Code:
+DROP:  MACRO
+       INX
+       INX
+       ENDM
+
+It couldn't get much simpler. Now every time your assembly code has the line "DROP", the assembler lays down two INX instructions. It's the same thing, but DROP tells why you're incrementing X. Using a DROP subroutine and calling it with JSR DROP would take an additional byte and four times as many clocks (plus the 3-byte one-time memory expense of the subroutine itself).
+
+Swapping the top two cells on the stack can be accomplished with:
+
+Code:
+SWAP:   LDA  0,X   ; Swap low bytes of the two two-byte cells,
+        LDY  2,X
+        STA  2,X
+        STY  0,X
+ 
+        LDA  1,X   ; followed by the high bytes.
+        LDY  3,X
+        STA  3,X
+        STY  1,X
+
+        RTS
+ ;--------------
+
+This is long enough and used often enough that you will want to keep it as a subroutine as shown here instead of a macro, at least for the 6502. (The code is only half as long for the 65816.)
+
+Above, we gave the example of adding the two top stack cells. Here is some example code of how to do that with the stack:
+
+Code:
+PLUS:   CLC
+
+        LDA  0,X   ; Start by adding the low bytes
+        ADC  2,X   ; of the two cells,
+        STA  2,X   ; and put the result in the second cell on the stack,
+                   ; overwriting what was there before.
+        LDA  1,X   ; Then do the high bytes similarly.
+        ADC  3,X
+        STA  3,X
+
+        DROP       ; Drop the top cell from the stack.
+        RTS        ; The stack will now have one less cell.
+ ;--------------
+
+Subtracting now becomes an intuitive variation on the above. There are examples of multiplication and division at http://www.6502.org/source . The multiplication routines at http://www.6502.org/forum/viewtopic.php?t=689 multiply two 16-bit cells to arrive at a 32-bit (ie, two-celled) product, and the division routines at http://www.6502.org/source/integers/umm ... modfix.htm start with a 32-bit number and divide by a 16-bit number to get a 16-bit quotient and a 16-bit remainder. These are unsigned, but can be used as building blocks to arrive at the signed counterparts, other precisions, and all the functions we will be discussing. There are more arithmetic source code examples at http://www.6502.org/source .
+
+Further up, Bruce posted the code for NEGATE, which just changes the sign of a two-byte number. (For example, it turns 1487 to -1487, or vice-versa.) To run his routine with the stack, REG and REG+1 as he wrote it would be made to be interpreted by the assembler as 0,X and 1,X so we get the same as:
+
+Code:
+NEGATE: SEC
+        LDA  #0    ; Take 0
+        SBC  0,X   ; minus the low byte, and
+        STA  0,X   ; store the result back to the low byte.
+        LDA  #0    ; Then do the same for
+        SBC  1,X   ; the high byte, using the "borrow"
+        STA  1,X   ; potentially produced by the first
+        RTS        ; (low byte) operation.
+ ;--------------
+
+If your assembler can't alias something like REG to an addressing mode and operand as he suggested, just write it as shown here, and you'll get the same thing.
+
+Now you might be looking ahead a bit and realizing that you may not want to lose the cells that served as inputs for the addition or other process. After all, you might want to use that number again, and you don't want to have to store it in a variable to preserve it. Instead of having some routines that discard their inputs when they're done with them and some that don't, it works out better to have them all consume their inputs and then have other routines that duplicate the cells first if you'll want them again. For example, to duplicate the top cell on the stack, you would do:
+
+Code:
+DUP:    DEX        ; Create the new cell at the top.
+        DEX
+        LDA  2,X   ; Copy the low byte to the new cell,
+        STA  0,X
+        LDA  3,X   ; and then the high byte.
+        STA  1,X
+        RTS
+ ;--------------
+
+Here's an example for duplicating the top two cells, preserving the order:
+
+Code:
+_2DUP:  DEX        ; Create two new cells at the top.
+        DEX
+        DEX
+        DEX
+
+        LDA  6,X   ; Then copy the contents over.
+        STA  2,X
+        LDA  7,X
+        STA  3,X
+        LDA  4,X
+        STA  0,X
+        LDA  5,X
+        STA  1,X
+
+        RTS
+ ;--------------
+
+It also makes for a smaller kernel and fewer errors if we treat all cells as two bytes (or at least the same number of bytes every time, even if it's not two), instead of trying to economize and have single-byte cells and the combinations of operators and so on that would be necessary for all the various precisions of interest. If a particular number will always fit in 8 bits or less, just zero the high byte of the cell.
+
+
+
+We can introduce more stack-manipulation subroutines as they become necessary. Fortunately this trail has already been blazed, so we don't have to re-invent things and wonder if we're painting ourselves into a corner.
+
+In someone's musings (name witheld to protect the guilty) on language implementations on the 6502, he says that errors in stack manipulation are a serious problem in Forth. This shows his inexperience with it. Yes, a person who is new to Forth will crash it frequently; but that quickly ends with a little experience to get the hang of it.
+
+========================
+
+Quote:
+GARTHWILSON wrote:
+Quote:
+We'll need a good title to grab the attention of the person who thinks there's no way scaled-integer could be adequate for his application just because it's not floating-point.
+
+
+Here are a couple of suggestions off the top of my head:
+
+Beyond integers
+Practical math with real numbers
+
+I was going for something that would emphasize the advantages of scaled-integer, rather than bash floating-point.
+
+I see your point. "Real" however could still be floating-point, and rules out complex numbers (which I do hope to address). "Beyond Integers" may be on the right track but just need a little expansion to stir one's interest.
+
+
+Note: Although I never finished this series, I addressed much of the material in my article Large Look-up Tables for Hyperfast, Accurate, 16-Bit Fixed-Point/Scaled-Integer Math on my website, and I will go further into stacks in my upcoming stacks primer which will have about 19 sections. When I'll finish and post it depends on my work. I was hoping to have it up long ago, but now in Dec 2014 I still have quite a lot left to do. [EDIT, Oct 1, 2015] The stacks treatise is up, at http://wilsonminesco.com/stacks/ .
+
